@@ -3160,7 +3160,7 @@ fig.set_size_inches(4.5 + fig.get_size_inches())  # Resize fig for doco. You don
 
 # # Pair plot
 
-# In[74]:
+# In[105]:
 
 
 df_pair = pd.DataFrame({'GroupStellarMass'      : np.log10(g_st),
@@ -3193,7 +3193,49 @@ g.map_diag(sns.kdeplot, lw=3)
 #    g.axes[i, j].set_visible(False)
 
 
-# In[160]:
+# # Pair plot for specific parameters
+
+# In[128]:
+
+
+sns.set(font_scale=1)
+sns.set_style("ticks", {"xtick.major.size":10, "ytick.major.size":10,
+						"xtick.minor.size":6,"ytick.minor.size":6})
+sns.set_style({"xtick.direction": "in","ytick.direction": "in"})
+
+
+# Adding size, hue, palette and specify variables in vars
+variables = ["GroupStellarMass", "GroupHIMass"]
+g = sns.pairplot(df_pair, height=5, hue="GroupSize", palette="Purples", vars=variables,
+                plot_kws = {'s': 80, 'edgecolor': 'k'})
+#g.map_diag(plt.hist, density=True)
+g._legend.get_title().set_fontsize(20) 
+
+
+# Axis Labels
+replacements = {"GroupStellarMass": r'log M$_{\star\textrm{group}}$ [M$_{\odot}$]', 
+                "GroupHIMass"     : r'log M$_{\textrm{HI}\textrm{group}}$ [M$_{\odot}$]',
+                "GroupSize"       : r'Group Size'}
+
+for i in range(len(variables)):
+    for j in range(len(variables)):
+        xlabel = g.axes[i][j].get_xlabel()
+        ylabel = g.axes[i][j].get_ylabel()
+        if xlabel in replacements.keys():
+            g.axes[i][j].set_xlabel(replacements[xlabel], fontsize=17)
+        if ylabel in replacements.keys():
+            g.axes[i][j].set_ylabel(replacements[ylabel], fontsize=17)
+            
+#Legend
+for i in range(len(g.fig.get_children()[-1].texts)):
+    label = g.fig.get_children()[-1].texts[i].get_text()
+    if label in replacements.keys():
+        g.fig.get_children()[-1].texts[i].set_text(replacements[label])
+g.fig.get_children()[-1].set_bbox_to_anchor((1.05, 0.5, 0, 0))
+
+
+
+# In[76]:
 
 
 
@@ -3235,7 +3277,7 @@ leg.set_title('Group size')
 #plt.ylim(6,11)
 
 
-# In[79]:
+# In[77]:
 
 
 # Initiate figure and how large it will be
@@ -3328,13 +3370,13 @@ def HI_group_distribution(groups_dict):
 
 # # Bulge to total ratio (BTT)
 
-# In[80]:
+# In[78]:
 
 
 #BTT_cen.ravel().tolist()
 
 
-# In[81]:
+# In[79]:
 
 
 
@@ -3377,7 +3419,7 @@ leg.set_title('Group size')
 
 # ## N times N with B/T
 
-# In[161]:
+# In[80]:
 
 
 # Initiate figure and how large it will be
@@ -3486,13 +3528,13 @@ def mhi_vs_ms_3x3_colorbar(groups_dict):
     #return fig
 
 
-# In[162]:
+# In[81]:
 
 
 mhi_vs_ms_3x3_colorbar(updated_dict)
 
 
-# In[163]:
+# In[82]:
 
 
 # Initiate figure and how large it will be
@@ -3562,7 +3604,7 @@ def BT_distribution(groups_dict):
     #return fig
 
 
-# In[164]:
+# In[83]:
 
 
 BT_distribution(updated_dict)
@@ -3659,21 +3701,21 @@ mhi_vs_ms_colorbar(updated_dict)
 # # How the group look like (Mvir/Rvir/Pos)
 # #### Make a function to extract parameters
 
-# In[165]:
+# In[84]:
 
 
 for i in c_ind[0:5]:
     print(i, G['Rvir'][i][0:])
 
 
-# In[166]:
+# In[85]:
 
 
 for i in g_ind[0:5]:
     print(G['Pos'][i][0:])
 
 
-# In[90]:
+# In[86]:
 
 
 fig, ax = plt.subplots(figsize=(8,8))
