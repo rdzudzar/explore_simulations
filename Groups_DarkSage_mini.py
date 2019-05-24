@@ -3022,7 +3022,7 @@ def mhi_vs_ms_3x3_colorbar(groups_dict):
     ax[0][0].legend(loc=4,frameon=True,fancybox=True, framealpha=0.6, fontsize=20)
 
     plt.subplots_adjust(wspace = 0.0, hspace = 0.0)
-    
+
     # COLORBAR for the entire plot
 
     plt.colorbar(im, ax=ax[:, 2], pad=0.01, label=r'B/T ratio')
@@ -3465,6 +3465,7 @@ CS = plt.contour(xi, yi, zi,levels = levels,
               linewidths=(1,),
               origin=origin)
 
+
 plt.plot(x, y, 'ko')
 
 plt.clabel(CS, fmt='%.3f', colors='b', fontsize=8)
@@ -3484,6 +3485,12 @@ import pylab
 from scipy.stats import skewnorm
 from numpy.random import normal, multivariate_normal
 from chainconsumer import ChainConsumer
+
+
+# In[115]:
+
+
+sns.__version__
 
 
 # In[ ]:

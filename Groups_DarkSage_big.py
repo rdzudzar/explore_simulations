@@ -123,7 +123,7 @@ def galdtype_darksage(Nannuli=30):
 #print(range(30,60))
 
 
-# In[7]:
+# In[256]:
 
 
 # Make plots for z=0 galaxies that are typically used to constrain Dark Sage.
@@ -144,7 +144,7 @@ sim = 1 # which simulation Dark Sage has been run on -- if it's new, you will ne
 #   0 = Mini Millennium, 1 = Full Millennium, 2 = SMDPL
 
 fpre = 'model_z0.000' # what is the prefix name of the z=0 files
-files = range(50) # list of file numbers you want to read
+files = range(100) # list of file numbers you want to read
 
 Nannuli = 30 # number of annuli used for discs in Dark Sage
 FirstBin = 1.0 # copy from parameter file -- sets the annuli's sizes
@@ -170,7 +170,7 @@ else:
 ######  ================= #####
 
 
-# In[8]:
+# In[257]:
 
 
 ##### READ DARK SAGE DATA #####
@@ -179,7 +179,7 @@ G = r.darksage_snap(indir+fpre, files, Nannuli=Nannuli)
 ######  ================= #####
 
 
-# In[9]:
+# In[258]:
 
 
 ##### SET PLOTTING DEFAULTS #####
@@ -379,7 +379,7 @@ DS.columns
 # ### Cut based on the stellar mass
 # ### The HI mass: np.sum(G['DiscHI'],axis=1)
 
-# In[12]:
+# In[259]:
 
 
 #Mass resolution 8.6x10^8 Msun/h  
@@ -390,13 +390,13 @@ HI_mass_cut = np.sum(G['DiscHI'],axis=1) [ G['StellarMass']>0.06424 ]/h
 Mvir_mass_cut = G['Mvir'] [ G['StellarMass']>0.06424 ]/h
 
 
-# In[13]:
+# In[260]:
 
 
 print(len(Stellar_mass_cut))
 
 
-# In[14]:
+# In[261]:
 
 
 #CENTRALS
@@ -405,7 +405,7 @@ Mcoldgas_central_galaxies_cut = np.sum(G['DiscHI'],axis=1) [ (G['CentralGalaxyIn
 Mvir_central_galaxies_cut = G['Mvir'] [ (G['CentralGalaxyIndex']==G['GalaxyIndex']) & (G['StellarMass']>0.06424) & (np.sum(G['DiscHI'],axis=1)!=0)]/h
 
 
-# In[15]:
+# In[262]:
 
 
 #SATELLITES
@@ -467,7 +467,7 @@ plt.legend()
 plt.show()
 
 
-# In[16]:
+# In[263]:
 
 
 Mlen_central = G['LenMax'] [ (G['CentralGalaxyIndex']==G['GalaxyIndex']) & (G['StellarMass']>0.06424)& (G['LenMax']>=100)]/h
@@ -509,7 +509,7 @@ plt.show()
 
 
 
-# In[17]:
+# In[264]:
 
 
 from matplotlib.ticker import NullFormatter
@@ -615,7 +615,7 @@ plt.show()
 # ## Bulge-to-total ratio (All)
 # ##### I want to see only late-type galaxies
 
-# In[17]:
+# In[265]:
 
 
 BTT = (G['InstabilityBulgeMass'] + G['MergerBulgeMass']) / ( G['StellarMass'] ) # Find bulge to total ratio
@@ -759,7 +759,7 @@ print('unique central ID', central_IDs[:10])
 
 # ## Extract indices and masses of central galaxies
 
-# In[18]:
+# In[266]:
 
 
 store_cen_indices = []
@@ -768,7 +768,7 @@ store_cen_indices = np.where(G["Type"] == 0)[0]
 
 # ## Extract indices and masses of ALL galaxies in a halo
 
-# In[19]:
+# In[267]:
 
 
 central_IDs, unique_counts = np.unique(G["CentralGalaxyIndex"], return_counts=True) #find unique ids
@@ -796,7 +796,7 @@ for group in store_all_indices:
         print(group)
 
 
-# In[20]:
+# In[21]:
 
 
 print(store_cen_indices[0:5])
@@ -806,7 +806,7 @@ print(store_all_indices[0:5])
 # # Create dictionary for group sizes 
 # ### Based on the number of galaxies in a group
 
-# In[20]:
+# In[268]:
 
 
 groups = {} #initiate groups dictionary
@@ -827,7 +827,7 @@ for item in trange(len(store_all_indices)):
 
 # # Single galaxies
 
-# In[21]:
+# In[269]:
 
 
 # SINGLE CENTRALS
@@ -846,7 +846,7 @@ for group in groups[Group_of_one]:
     single_gal_ind.append(single_gal_idx)
 
 
-# In[22]:
+# In[270]:
 
 
 Mstellar_single_gal = G["StellarMass"][single_gal_ind]*1e10/h
@@ -855,14 +855,14 @@ Mvir_single_gal = G["Mvir"][single_gal_ind]*1e10/h
 BTT_single = (G['InstabilityBulgeMass'][single_gal_ind]*1e10/h + G['MergerBulgeMass'][single_gal_ind]*1e10/h) / ( G['StellarMass'][single_gal_ind]*1e10/h )
 
 
-# In[22]:
+# In[25]:
 
 
 print(len(G["StellarMass"][ (G["StellarMass"] > Mass_cutoff) & (G['Len']>=100) ]))
 print(len(G["StellarMass"][ (G["StellarMass"] > Mass_cutoff)]))
 
 
-# In[24]:
+# In[26]:
 
 
 
@@ -883,13 +883,13 @@ plt.show()
 # # All galaxies in groups that are N=given N
 # #### if **any galaxy in the group** has Mass less than `Mass_cutoff`, we don't plot the entire group
 
-# In[23]:
+# In[271]:
 
 
 Mass_cutoff = 0.06424
 
 
-# In[26]:
+# In[28]:
 
 
 print(G["StellarMass"][groups[15][1]] > Mass_cutoff)
@@ -1058,7 +1058,7 @@ plt.show()
 
 # # Create cen & sat from groups dictionary
 
-# In[24]:
+# In[272]:
 
 
 def create_cen_sat_from_groups_dict(groups, store_cen_indices, my_mass_cutoff=Mass_cutoff):
@@ -1150,7 +1150,7 @@ def create_cen_sat_from_groups_dict(groups, store_cen_indices, my_mass_cutoff=Ma
                     
 
 
-# In[25]:
+# In[273]:
 
 
 #This is updated dictionary which one can parse to the plotting function:
@@ -1184,11 +1184,11 @@ updated_dict[3]["Groups"]["Group_10"] #shows indices for 10th Group in Groups of
 
 # ### Check group sizes
 
-# In[44]:
+# In[277]:
 
 
-#for i in trange(1,100):
-#    print(i, len(updated_dict[i]["Groups"].keys()))
+for i in trange(1,20):
+    print(i, len(updated_dict[i]["Groups"].keys()))
 #    
 #print(updated_dict[20]['Groups'].keys())
 
@@ -1199,7 +1199,7 @@ updated_dict[3]["Groups"]["Group_10"] #shows indices for 10th Group in Groups of
 
 
 
-# In[26]:
+# In[274]:
 
 
 # Initiate figure and how large it will be
@@ -1285,7 +1285,7 @@ def mhi_vs_ms_3x3(groups_dict):
     #return fig
 
 
-# In[27]:
+# In[275]:
 
 
 #Use line_profiler to test how fast is each line of the code
@@ -1653,7 +1653,7 @@ hist_Mhi_vs_Mstar(updated_dict)
 
 # # Properties of the group as the whole entity
 
-# In[39]:
+# In[35]:
 
 
 def two_sided_histogram(x_data, y_data, color='lightgrey', legend=legend, s=90):
@@ -2075,7 +2075,7 @@ def two_sided_histogram_rich(x_cen_rich, y_cen_rich, x_cen_poor, y_cen_poor):
 two_sided_histogram_rich(richer_central_s_m, richer_central_hi_m, poorer_central_s_m, poorer_central_hi_m) 
 
 
-# In[45]:
+# In[36]:
 
 
 def two_sided_histogram_rich_groups(x_cen_rich, y_cen_rich, x_cen_poor, y_cen_poor,
@@ -2188,7 +2188,7 @@ def two_sided_histogram_rich_groups(x_cen_rich, y_cen_rich, x_cen_poor, y_cen_po
     
 
 
-# In[46]:
+# In[37]:
 
 
 def two_sided_histogram_difference(x_cen_rich, y_cen_rich, x_cen_poor, y_cen_poor,
@@ -2303,7 +2303,7 @@ def two_sided_histogram_difference(x_cen_rich, y_cen_rich, x_cen_poor, y_cen_poo
     
 
 
-# In[47]:
+# In[38]:
 
 
 def two_sided_histogram_difference_groups(x_cen_rich, y_cen_rich, x_cen_poor, y_cen_poor,
@@ -2528,13 +2528,13 @@ two_sided_histogram_rich_groups(all_richer_central_s_m.ravel(), all_richer_centr
 # # See the distribution of groups where central galaxy is X% HI richer than the sum of the satellites around that central
 # ### Percent = M_HI_central/ (Sum[ M_HI_satellites ])
 
-# In[49]:
+# In[278]:
 
 
 per_cent_with_pairs =[]
 
 
-# In[50]:
+# In[279]:
 
 
 #Use dictionary and for each galaxy in "Groups" of 3 show central/satellite index
@@ -2558,13 +2558,13 @@ group_HI_mass = []
 group_St_mass = []
 
 
-# In[51]:
+# In[280]:
 
 
 #BTT_central[0]
 
 
-# In[52]:
+# In[281]:
 
 
 # STORE INDICES
@@ -2585,7 +2585,7 @@ for i in trange(3,21,1): #starting grom galaxy pairs
         s_ind.append(satellite_inds)
 
 
-# In[53]:
+# In[282]:
 
 
 # Compute central galaxies
@@ -2593,10 +2593,10 @@ central_mass = np.sum(G['DiscHI'],axis=1)[c_ind]*1e10/h
 central_st_mass = G['StellarMass'][c_ind]*1e10/h
 
 
-# In[54]:
+# In[283]:
 
 
-# Compute group properties (~4min)
+# Compute group properties 
 g_m = []
 g_st = []
 for i in tqdm(g_ind):
@@ -2607,7 +2607,7 @@ for i in tqdm(g_ind):
     
 
 
-# In[55]:
+# In[284]:
 
 
 # Compute percentage
@@ -2619,7 +2619,7 @@ percentage = (central_mass.ravel()/g_m)*100
 #print(percentage)
 
 
-# In[56]:
+# In[285]:
 
 
 
@@ -2645,7 +2645,7 @@ leg.legendHandles[0].set_color('k')
 #plt.savefig('Groups_HIinCentral.png')
 
 
-# In[57]:
+# In[286]:
 
 
 #Bulge-to-total ratio
@@ -2697,7 +2697,7 @@ plt.legend(loc=1)
 plt.show()
 
 
-# In[58]:
+# In[287]:
 
 
 grp_length = []
@@ -2706,7 +2706,7 @@ for i in g_ind:
     grp_length.append(size)
 
 
-# In[59]:
+# In[288]:
 
 
 df_percent = pd.DataFrame({'GroupStellarMass'   : g_st,
@@ -2720,13 +2720,13 @@ df_percent = pd.DataFrame({'GroupStellarMass'   : g_st,
 #print(df_percent)
 
 
-# In[60]:
+# In[289]:
 
 
 print(df_percent['BTT_central'][0:4])
 
 
-# In[61]:
+# In[51]:
 
 
 
@@ -2769,7 +2769,7 @@ leg.legendHandles[0].set_color('k')
 plt.savefig('Groups_HIinCentral.png')
 
 
-# In[62]:
+# In[52]:
 
 
 HI_per_cent = 50
@@ -2813,7 +2813,7 @@ leg.legendHandles[0].set_color('k')
 plt.savefig('Groups_HIinCentral.png')
 
 
-# In[63]:
+# In[290]:
 
 
 
@@ -2856,7 +2856,7 @@ leg.legendHandles[0].set_color('k')
 plt.savefig('Groups_HIinCentral.png')
 
 
-# In[64]:
+# In[54]:
 
 
 
@@ -2901,7 +2901,7 @@ leg.legendHandles[0].set_color('lightgrey')
 
 # # Fixed N-sized groups
 
-# In[65]:
+# In[291]:
 
 
 Nsize_group = 3
@@ -2945,13 +2945,13 @@ leg.legendHandles[0].set_color('k')
 plt.savefig('Groups_HIinCentral.png')
 
 
-# In[66]:
+# In[292]:
 
 
 import seaborn as sns
 
 
-# In[67]:
+# In[57]:
 
 
 
@@ -2961,7 +2961,7 @@ import seaborn as sns
 #matplotlib.rcParams.update({'font.size': fsize, 'xtick.major.size': 10, 'ytick.major.size': 10, 'xtick.major.width': 1, 'ytick.major.width': 1, 'ytick.minor.size': 5, 'xtick.minor.size': 5, 'xtick.direction': 'in', 'ytick.direction': 'in', 'axes.linewidth': 1, 'text.usetex': True, 'font.family': 'serif', 'font.serif': 'Times New Roman', 'legend.numpoints': 1, 'legend.columnspacing': 1, 'legend.fontsize': fsize-4, 'xtick.top': True, 'ytick.right': True})
 
 
-# In[68]:
+# In[293]:
 
 
 High_percentage = 80
@@ -3010,7 +3010,7 @@ leg.legendHandles[1].set_color('plum')
 plt.show()
 
 
-# In[69]:
+# In[294]:
 
 
 High_percentage = 50
@@ -3063,7 +3063,7 @@ leg.legendHandles[1].set_color('plum')
 plt.show()
 
 
-# In[70]:
+# In[60]:
 
 
 matplotlib.__version__ #has to be 3.0.3; For sure is not working with 2.2.2
@@ -3076,7 +3076,7 @@ from chainconsumer import ChainConsumer
 #%matplotlib inline
 
 
-# In[71]:
+# In[295]:
 
 
 High_percentage = 60
@@ -3100,7 +3100,7 @@ fig.set_size_inches(5.5 + fig.get_size_inches())  # Resize fig for doco. You don
 plt.show()
 
 
-# In[72]:
+# In[296]:
 
 
 High_percentage = 60
@@ -3127,7 +3127,7 @@ fig = c.plotter.plot(figsize=1.5)
 fig.set_size_inches(4.5 + fig.get_size_inches())  # Resize fig for doco. You don't need this.
 
 
-# In[73]:
+# In[63]:
 
 
 High_percentage = 50
@@ -3160,7 +3160,7 @@ fig.set_size_inches(4.5 + fig.get_size_inches())  # Resize fig for doco. You don
 
 # # Pair plot
 
-# In[105]:
+# In[383]:
 
 
 df_pair = pd.DataFrame({'GroupStellarMass'      : np.log10(g_st),
@@ -3169,11 +3169,26 @@ df_pair = pd.DataFrame({'GroupStellarMass'      : np.log10(g_st),
                            'GroupSize'          : grp_length,
                            'BTTcentral'         : BTT_cen.ravel() ,
                             'Mvircen'           : Mvir_cen.ravel(),
-                           'Rvircen'           : Rvir_cen.ravel() })
-                           #'LenCen'             : Lenght_cen.ravel()})
+                           'Rvircen'            : Rvir_cen.ravel(),# })
+                           'RoundedPercent'     : rounded_per})
 
 
-# In[75]:
+# In[382]:
+
+
+import math
+
+def roundup(x):
+    return int(math.ceil(x / 5.0)) * 5
+
+rounded_per = []
+for i in df_pair['Percent']:
+    A = roundup(i)#_test = (central_mass.ravel()/g_m)*100
+    rounded_per.append(A)
+print(rounded_per[0:10])
+
+
+# In[298]:
 
 
 
@@ -3193,49 +3208,146 @@ g.map_diag(sns.kdeplot, lw=3)
 #    g.axes[i, j].set_visible(False)
 
 
+# In[327]:
+
+
+fig = plt.figure(figsize=(8,8))                                                               
+ax = fig.add_subplot(1,1,1)
+
+corr = df_pair.corr()
+
+mask = np.zeros_like(corr, dtype=np.bool)
+mask[np.triu_indices_from(mask)] = True
+
+sns.heatmap(corr, annot=True, cmap='viridis',  linewidths=.5, mask=mask, vmax=1,
+        xticklabels=corr.columns,
+        yticklabels=corr.columns)
+
+
+# In[468]:
+
+
+# Import Data
+#mpg = pd.read_csv("https://github.com/selva86/datasets/raw/master/mpg_ggplot2.csv")
+
+# Draw Plot
+plt.figure(figsize=(16,10), dpi= 80)
+fig, axes = joypy.joyplot(df_pair[df_pair['GroupSize']==4], column=['GroupHIMass', 'GroupStellarMass'], by="RoundedPercent", ylim='own', figsize=(14,10),hist=False, bins=50, overlap=1, colormap=[cm.viridis_r, cm.cividis_r])
+#axes = joypy.joyplot(df_pair[df_pair['GroupSize']==3], column=['GroupHIMass'], by="RoundedPercent", ylim='own', figsize=(14,10),hist=False, bins=50, overlap=2, colormap=[cm.cividis_r])
+
+# Decoration
+plt.title(r'\% of HI in central (rounded) vs. Group Mass', fontsize=22)
+
+axes[-1].set_xlabel(r' log M$_{\textrm{group}}$ [M$_{\odot}$]', fontsize=25)
+
+#plt.xaxis('A')
+plt.show()
+
+
+# In[456]:
+
+
+
+sns.set(style="white", rc={"axes.facecolor": (0, 0, 0, 0)})
+
+pal = sns.cubehelix_palette(21, rot=.15, light=.5)
+g = sns.FacetGrid(df_pair[df_pair['GroupSize']==3], row="RoundedPercent", hue='RoundedPercent', aspect=15, height=.7, palette=pal, legend_out=True) #hue='GroupSize'
+#g = sns.FacetGrid(df_pair[df_pair['GroupSize']==4], row="RoundedPercent", hue='RoundedPercent', aspect=15, height=.7, palette=pal, legend_out=True) #hue='GroupSize'
+
+# Draw the densities in a few steps
+g.map(sns.kdeplot, "GroupHIMass", clip_on=True, shade=True, alpha=0.8, lw=1.5, bw=.1)
+g.map(sns.kdeplot, "GroupStellarMass", clip_on=True, shade=True, lw=2, bw=.1)
+g.map(plt.axhline, y=0, lw=2, clip_on=False)
+
+#Define and use a simple function to label the plot in axes coordinates
+def label(x, color, label):
+    ax = plt.gca()
+    ax.text(0, .2, label, fontweight="bold", color=color,
+            ha="left", va="center", transform=ax.transAxes)
+
+g.map(label, 'RoundedPercent')
+
+g.fig.subplots_adjust(hspace=-.25)
+
+# Remove axes details that don't play well with overlap
+g.set_titles("")
+g.set(yticks=[])
+g.despine(bottom=True, left=True)
+
+
 # # Pair plot for specific parameters
 
-# In[128]:
+# In[462]:
 
 
-sns.set(font_scale=1)
-sns.set_style("ticks", {"xtick.major.size":10, "ytick.major.size":10,
-						"xtick.minor.size":6,"ytick.minor.size":6})
-sns.set_style({"xtick.direction": "in","ytick.direction": "in"})
+#sns.set(font_scale=1)
+#sns.set_style("ticks", {"xtick.major.size":10, "ytick.major.size":10,
+#						"xtick.minor.size":6,"ytick.minor.size":6})
+#sns.set_style({"xtick.direction": "in","ytick.direction": "in"})
+#
+#
+## Adding size, hue, palette and specify variables in vars
+#variables = ["Percent", "GroupHIMass", "Rvircen"]
+#g = sns.pairplot(df_pair, height=5, hue="GroupSize", palette="Purples", vars=variables,
+#                plot_kws = {'s': 80, 'edgecolor': 'k'})
+##g.map_diag(plt.hist, density=True)
+#g._legend.get_title().set_fontsize(20) 
+#
+#
+## Axis Labels
+#replacements = {"GroupStellarMass": r'log M$_{\star\textrm{group}}$ [M$_{\odot}$]', 
+#                "GroupHIMass"     : r'log M$_{\textrm{HI}\textrm{group}}$ [M$_{\odot}$]',
+#                "Percent"         : r'\% of HI in Central',
+#                "GroupSize"       : r'Group Size'}
+#
+#for i in range(len(variables)):
+#    for j in range(len(variables)):
+#        xlabel = g.axes[i][j].get_xlabel()
+#        ylabel = g.axes[i][j].get_ylabel()
+#        if xlabel in replacements.keys():
+#            g.axes[i][j].set_xlabel(replacements[xlabel], fontsize=17)
+#        if ylabel in replacements.keys():
+#            g.axes[i][j].set_ylabel(replacements[ylabel], fontsize=17)
+#            
+##Legend
+#for i in range(len(g.fig.get_children()[-1].texts)):
+#    label = g.fig.get_children()[-1].texts[i].get_text()
+#    if label in replacements.keys():
+#        g.fig.get_children()[-1].texts[i].set_text(replacements[label])
+#g.fig.get_children()[-1].set_bbox_to_anchor((1.05, 0.5, 0, 0))
+#
+#
 
 
-# Adding size, hue, palette and specify variables in vars
-variables = ["GroupStellarMass", "GroupHIMass"]
-g = sns.pairplot(df_pair, height=5, hue="GroupSize", palette="Purples", vars=variables,
-                plot_kws = {'s': 80, 'edgecolor': 'k'})
-#g.map_diag(plt.hist, density=True)
-g._legend.get_title().set_fontsize(20) 
+# In[467]:
 
 
-# Axis Labels
-replacements = {"GroupStellarMass": r'log M$_{\star\textrm{group}}$ [M$_{\odot}$]', 
-                "GroupHIMass"     : r'log M$_{\textrm{HI}\textrm{group}}$ [M$_{\odot}$]',
-                "GroupSize"       : r'Group Size'}
+from __future__ import unicode_literals
+import joypy
+from matplotlib import cm
 
-for i in range(len(variables)):
-    for j in range(len(variables)):
-        xlabel = g.axes[i][j].get_xlabel()
-        ylabel = g.axes[i][j].get_ylabel()
-        if xlabel in replacements.keys():
-            g.axes[i][j].set_xlabel(replacements[xlabel], fontsize=17)
-        if ylabel in replacements.keys():
-            g.axes[i][j].set_ylabel(replacements[ylabel], fontsize=17)
-            
-#Legend
-for i in range(len(g.fig.get_children()[-1].texts)):
-    label = g.fig.get_children()[-1].texts[i].get_text()
-    if label in replacements.keys():
-        g.fig.get_children()[-1].texts[i].set_text(replacements[label])
-g.fig.get_children()[-1].set_bbox_to_anchor((1.05, 0.5, 0, 0))
+
+# In[470]:
+
+
+get_ipython().run_line_magic('matplotlib', 'inline')
+try:
+    #labels=[y if y%1==0 else None for y in list(df_pair.GroupHIMass.unique())]
+    fig, axes = joypy.joyplot(df_pair, by="RoundedPercent", column=["GroupHIMass","GroupStellarMass"], range_style='own',
+                          grid="y", linewidth=1, legend=True, loc="best", figsize=(10,10), overlap=1,
+                          title="Title", color=['#9ecae1', '#d4b9da']
+                          )        
+except ValueError:
+    pass  # do nothing!
+
+
+# In[ ]:
 
 
 
-# In[76]:
+
+
+# In[465]:
 
 
 
@@ -3277,7 +3389,7 @@ leg.set_title('Group size')
 #plt.ylim(6,11)
 
 
-# In[77]:
+# In[68]:
 
 
 # Initiate figure and how large it will be
@@ -3419,7 +3531,7 @@ leg.set_title('Group size')
 
 # ## N times N with B/T
 
-# In[80]:
+# In[140]:
 
 
 # Initiate figure and how large it will be
@@ -3521,14 +3633,14 @@ def mhi_vs_ms_3x3_colorbar(groups_dict):
     ax[0][0].legend(loc=4,frameon=True,fancybox=True, framealpha=0.6, fontsize=20)
 
     plt.subplots_adjust(wspace = 0.0, hspace = 0.0)
-    
+
     # COLORBAR for the entire plot
     plt.colorbar(im, ax=ax[:, 4], pad=0.01, label=r'B/T ratio')
     plt.show()
     #return fig
 
 
-# In[81]:
+# In[141]:
 
 
 mhi_vs_ms_3x3_colorbar(updated_dict)
