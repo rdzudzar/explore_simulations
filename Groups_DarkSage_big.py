@@ -12,6 +12,14 @@ from tqdm import tqdm
 import time
 
 
+# In[35]:
+
+
+from jupyterthemes.stylefx import set_nb_theme
+set_nb_theme('solarizedl')
+#set_nb_theme('solarizedd')
+
+
 # In[2]:
 
 
@@ -123,7 +131,7 @@ def galdtype_darksage(Nannuli=30):
 #print(range(30,60))
 
 
-# In[256]:
+# In[6]:
 
 
 # Make plots for z=0 galaxies that are typically used to constrain Dark Sage.
@@ -144,7 +152,7 @@ sim = 1 # which simulation Dark Sage has been run on -- if it's new, you will ne
 #   0 = Mini Millennium, 1 = Full Millennium, 2 = SMDPL
 
 fpre = 'model_z0.000' # what is the prefix name of the z=0 files
-files = range(100) # list of file numbers you want to read
+files = range(30) # list of file numbers you want to read
 
 Nannuli = 30 # number of annuli used for discs in Dark Sage
 FirstBin = 1.0 # copy from parameter file -- sets the annuli's sizes
@@ -170,7 +178,7 @@ else:
 ######  ================= #####
 
 
-# In[257]:
+# In[7]:
 
 
 ##### READ DARK SAGE DATA #####
@@ -179,7 +187,7 @@ G = r.darksage_snap(indir+fpre, files, Nannuli=Nannuli)
 ######  ================= #####
 
 
-# In[258]:
+# In[8]:
 
 
 ##### SET PLOTTING DEFAULTS #####
@@ -201,7 +209,7 @@ if not os.path.exists(outdir): os.makedirs(outdir)
 
 # ## Want to store output as Pandas dataframe; Have to convert multidimensional arrays into Pandas series first:
 
-# In[11]:
+# In[61]:
 
 
 import pandas as pd
@@ -379,7 +387,7 @@ DS.columns
 # ### Cut based on the stellar mass
 # ### The HI mass: np.sum(G['DiscHI'],axis=1)
 
-# In[259]:
+# In[9]:
 
 
 #Mass resolution 8.6x10^8 Msun/h  
@@ -390,13 +398,13 @@ HI_mass_cut = np.sum(G['DiscHI'],axis=1) [ G['StellarMass']>0.06424 ]/h
 Mvir_mass_cut = G['Mvir'] [ G['StellarMass']>0.06424 ]/h
 
 
-# In[260]:
+# In[10]:
 
 
 print(len(Stellar_mass_cut))
 
 
-# In[261]:
+# In[11]:
 
 
 #CENTRALS
@@ -405,7 +413,7 @@ Mcoldgas_central_galaxies_cut = np.sum(G['DiscHI'],axis=1) [ (G['CentralGalaxyIn
 Mvir_central_galaxies_cut = G['Mvir'] [ (G['CentralGalaxyIndex']==G['GalaxyIndex']) & (G['StellarMass']>0.06424) & (np.sum(G['DiscHI'],axis=1)!=0)]/h
 
 
-# In[262]:
+# In[12]:
 
 
 #SATELLITES
@@ -467,21 +475,31 @@ plt.legend()
 plt.show()
 
 
-# In[263]:
+# In[33]:
 
 
-Mlen_central = G['LenMax'] [ (G['CentralGalaxyIndex']==G['GalaxyIndex']) & (G['StellarMass']>0.06424)& (G['LenMax']>=100)]/h
+LenMaxCut = 80
+
+Mlen_central = G['LenMax'] [ (G['CentralGalaxyIndex']==G['GalaxyIndex']) & (G['StellarMass']>0.06424)& (G['LenMax']>=LenMaxCut)]/h
 Mlen_all_central = G['LenMax'] [ (G['CentralGalaxyIndex']==G['GalaxyIndex']) & (G['StellarMass']>0.06424)]/h
 print(len(Mlen_central))
 print(len(Mlen_all_central))
 
-Mlen_sat = G['LenMax'] [ (G['CentralGalaxyIndex']!=G['GalaxyIndex']) & (G['StellarMass']>0.06424) & (G['LenMax']>=100)]/h
+Mlen_sat = G['LenMax'] [ (G['CentralGalaxyIndex']!=G['GalaxyIndex']) & (G['StellarMass']>0.06424) & (G['LenMax']>=LenMaxCut)]/h
 Mlen_all_sat = G['LenMax'] [ (G['CentralGalaxyIndex']!=G['GalaxyIndex']) & (G['StellarMass']>0.06424) ]/h
 print(len(Mlen_sat))
 print(len(Mlen_all_sat))
 
+# These numbers are for the first 30 files in BigBox
+#50 Particles: 224298   224682   89236   89552
+#60 Particles: 223043   224682   88119   89552  ~1700 less centrals; ~1500 less satellites
+#70 Particles: 220066   224682   85638   89552  ~5000 less centrals; ~4000 less satellites
+#80 Particles: 214977   224682   82003   89552  ~10 000 less centrals; ~4000 less satellites
+#90 Particles: 207607   224682   77608   89552
+#100 Particles: 198476  224682   73181   89552
 
-# In[127]:
+
+# In[27]:
 
 
 
@@ -489,12 +507,13 @@ fig = plt.figure(figsize=(10,10))
 ax = fig.add_subplot(1,1,1)
 
 plt.hist( np.log10(Mlen_all_central), bins=50, color='grey',  label=r'Central all')
-plt.hist( np.log10(Mlen_central), bins=50, color='lightgrey',  label=r'Central L>100')
-plt.hist( np.log10(Mlen_all_sat), bins=50, color='blue',  label=r'Sat all')
-plt.hist( np.log10(Mlen_sat), bins=50, color='lightblue',  label=r'Sat L>100')
+plt.hist( np.log10(Mlen_central), bins=50, color='lightgrey',  label=r'Central L$>${0}'.format(LenMaxCut))
+plt.hist( np.log10(Mlen_all_sat), bins=50, color='#225ea8',  label=r'Sat all')
+plt.hist( np.log10(Mlen_sat), bins=50, color='#c7e9b4',  label=r'Sat L$>${0}'.format(LenMaxCut))
 
 
 plt.axvline(2, 0, label='Len=100', color='red')
+plt.axvline(1.903089, 0, label='Len=80', color='red', linestyle='--')
 
 ax.set_xlabel(r'log Len', fontsize=25)
 #ax.set_ylabel(r'log M$_{\textrm{HI}}$ [M$_{\odot}$]',fontsize=25)
@@ -509,7 +528,7 @@ plt.show()
 
 
 
-# In[264]:
+# In[36]:
 
 
 from matplotlib.ticker import NullFormatter
@@ -615,7 +634,7 @@ plt.show()
 # ## Bulge-to-total ratio (All)
 # ##### I want to see only late-type galaxies
 
-# In[265]:
+# In[37]:
 
 
 BTT = (G['InstabilityBulgeMass'] + G['MergerBulgeMass']) / ( G['StellarMass'] ) # Find bulge to total ratio
@@ -759,7 +778,7 @@ print('unique central ID', central_IDs[:10])
 
 # ## Extract indices and masses of central galaxies
 
-# In[266]:
+# In[38]:
 
 
 store_cen_indices = []
@@ -768,7 +787,7 @@ store_cen_indices = np.where(G["Type"] == 0)[0]
 
 # ## Extract indices and masses of ALL galaxies in a halo
 
-# In[267]:
+# In[39]:
 
 
 central_IDs, unique_counts = np.unique(G["CentralGalaxyIndex"], return_counts=True) #find unique ids
@@ -806,7 +825,7 @@ print(store_all_indices[0:5])
 # # Create dictionary for group sizes 
 # ### Based on the number of galaxies in a group
 
-# In[268]:
+# In[40]:
 
 
 groups = {} #initiate groups dictionary
@@ -827,7 +846,7 @@ for item in trange(len(store_all_indices)):
 
 # # Single galaxies
 
-# In[269]:
+# In[41]:
 
 
 # SINGLE CENTRALS
@@ -846,7 +865,7 @@ for group in groups[Group_of_one]:
     single_gal_ind.append(single_gal_idx)
 
 
-# In[270]:
+# In[42]:
 
 
 Mstellar_single_gal = G["StellarMass"][single_gal_ind]*1e10/h
@@ -883,13 +902,13 @@ plt.show()
 # # All galaxies in groups that are N=given N
 # #### if **any galaxy in the group** has Mass less than `Mass_cutoff`, we don't plot the entire group
 
-# In[271]:
+# In[43]:
 
 
 Mass_cutoff = 0.06424
 
 
-# In[28]:
+# In[44]:
 
 
 print(G["StellarMass"][groups[15][1]] > Mass_cutoff)
@@ -1058,7 +1077,7 @@ plt.show()
 
 # # Create cen & sat from groups dictionary
 
-# In[272]:
+# In[45]:
 
 
 def create_cen_sat_from_groups_dict(groups, store_cen_indices, my_mass_cutoff=Mass_cutoff):
@@ -1112,7 +1131,7 @@ def create_cen_sat_from_groups_dict(groups, store_cen_indices, my_mass_cutoff=Ma
             
             if (G["StellarMass"][group] < my_mass_cutoff).any(): #creates array of booleans; if theese are true hit continue
                 continue
-            if (G['LenMax'][group] < 100).any():
+            if (G['LenMax'][group] < 70).any():
                 continue
             
             halo_groups.append(group)
@@ -1150,7 +1169,7 @@ def create_cen_sat_from_groups_dict(groups, store_cen_indices, my_mass_cutoff=Ma
                     
 
 
-# In[273]:
+# In[46]:
 
 
 #This is updated dictionary which one can parse to the plotting function:
@@ -1184,7 +1203,7 @@ updated_dict[3]["Groups"]["Group_10"] #shows indices for 10th Group in Groups of
 
 # ### Check group sizes
 
-# In[277]:
+# In[47]:
 
 
 for i in trange(1,20):
@@ -1199,7 +1218,7 @@ for i in trange(1,20):
 
 
 
-# In[274]:
+# In[48]:
 
 
 # Initiate figure and how large it will be
@@ -1285,7 +1304,7 @@ def mhi_vs_ms_3x3(groups_dict):
     #return fig
 
 
-# In[275]:
+# In[49]:
 
 
 #Use line_profiler to test how fast is each line of the code
@@ -2528,13 +2547,13 @@ two_sided_histogram_rich_groups(all_richer_central_s_m.ravel(), all_richer_centr
 # # See the distribution of groups where central galaxy is X% HI richer than the sum of the satellites around that central
 # ### Percent = M_HI_central/ (Sum[ M_HI_satellites ])
 
-# In[278]:
+# In[50]:
 
 
 per_cent_with_pairs =[]
 
 
-# In[279]:
+# In[51]:
 
 
 #Use dictionary and for each galaxy in "Groups" of 3 show central/satellite index
@@ -2558,13 +2577,13 @@ group_HI_mass = []
 group_St_mass = []
 
 
-# In[280]:
+# In[52]:
 
 
 #BTT_central[0]
 
 
-# In[281]:
+# In[53]:
 
 
 # STORE INDICES
@@ -2585,7 +2604,7 @@ for i in trange(3,21,1): #starting grom galaxy pairs
         s_ind.append(satellite_inds)
 
 
-# In[282]:
+# In[54]:
 
 
 # Compute central galaxies
@@ -2593,7 +2612,7 @@ central_mass = np.sum(G['DiscHI'],axis=1)[c_ind]*1e10/h
 central_st_mass = G['StellarMass'][c_ind]*1e10/h
 
 
-# In[283]:
+# In[55]:
 
 
 # Compute group properties 
@@ -2607,7 +2626,7 @@ for i in tqdm(g_ind):
     
 
 
-# In[284]:
+# In[56]:
 
 
 # Compute percentage
@@ -2619,7 +2638,7 @@ percentage = (central_mass.ravel()/g_m)*100
 #print(percentage)
 
 
-# In[285]:
+# In[57]:
 
 
 
@@ -2645,7 +2664,7 @@ leg.legendHandles[0].set_color('k')
 #plt.savefig('Groups_HIinCentral.png')
 
 
-# In[286]:
+# In[58]:
 
 
 #Bulge-to-total ratio
@@ -2697,7 +2716,7 @@ plt.legend(loc=1)
 plt.show()
 
 
-# In[287]:
+# In[59]:
 
 
 grp_length = []
@@ -2706,7 +2725,7 @@ for i in g_ind:
     grp_length.append(size)
 
 
-# In[288]:
+# In[62]:
 
 
 df_percent = pd.DataFrame({'GroupStellarMass'   : g_st,
@@ -2720,7 +2739,7 @@ df_percent = pd.DataFrame({'GroupStellarMass'   : g_st,
 #print(df_percent)
 
 
-# In[289]:
+# In[63]:
 
 
 print(df_percent['BTT_central'][0:4])
@@ -2901,7 +2920,7 @@ leg.legendHandles[0].set_color('lightgrey')
 
 # # Fixed N-sized groups
 
-# In[291]:
+# In[64]:
 
 
 Nsize_group = 3
@@ -2945,7 +2964,7 @@ leg.legendHandles[0].set_color('k')
 plt.savefig('Groups_HIinCentral.png')
 
 
-# In[292]:
+# In[65]:
 
 
 import seaborn as sns
@@ -2961,7 +2980,7 @@ import seaborn as sns
 #matplotlib.rcParams.update({'font.size': fsize, 'xtick.major.size': 10, 'ytick.major.size': 10, 'xtick.major.width': 1, 'ytick.major.width': 1, 'ytick.minor.size': 5, 'xtick.minor.size': 5, 'xtick.direction': 'in', 'ytick.direction': 'in', 'axes.linewidth': 1, 'text.usetex': True, 'font.family': 'serif', 'font.serif': 'Times New Roman', 'legend.numpoints': 1, 'legend.columnspacing': 1, 'legend.fontsize': fsize-4, 'xtick.top': True, 'ytick.right': True})
 
 
-# In[293]:
+# In[66]:
 
 
 High_percentage = 80
@@ -3010,7 +3029,7 @@ leg.legendHandles[1].set_color('plum')
 plt.show()
 
 
-# In[294]:
+# In[67]:
 
 
 High_percentage = 50
@@ -3063,7 +3082,7 @@ leg.legendHandles[1].set_color('plum')
 plt.show()
 
 
-# In[60]:
+# In[68]:
 
 
 matplotlib.__version__ #has to be 3.0.3; For sure is not working with 2.2.2
@@ -3076,7 +3095,7 @@ from chainconsumer import ChainConsumer
 #%matplotlib inline
 
 
-# In[295]:
+# In[69]:
 
 
 High_percentage = 60
@@ -3160,7 +3179,22 @@ fig.set_size_inches(4.5 + fig.get_size_inches())  # Resize fig for doco. You don
 
 # # Pair plot
 
-# In[383]:
+# In[80]:
+
+
+import math
+
+def roundup(x):
+    return int(math.ceil(x / 10.0)) * 10 # Add whether it will be by increment of 5 or 10 or something third
+
+rounded_per = []
+for i in df_percent['Percent']:
+    A = roundup(i)#_test = (central_mass.ravel()/g_m)*100
+    rounded_per.append(A)
+print(rounded_per[0:10])
+
+
+# In[81]:
 
 
 df_pair = pd.DataFrame({'GroupStellarMass'      : np.log10(g_st),
@@ -3173,22 +3207,7 @@ df_pair = pd.DataFrame({'GroupStellarMass'      : np.log10(g_st),
                            'RoundedPercent'     : rounded_per})
 
 
-# In[382]:
-
-
-import math
-
-def roundup(x):
-    return int(math.ceil(x / 5.0)) * 5
-
-rounded_per = []
-for i in df_pair['Percent']:
-    A = roundup(i)#_test = (central_mass.ravel()/g_m)*100
-    rounded_per.append(A)
-print(rounded_per[0:10])
-
-
-# In[298]:
+# In[74]:
 
 
 
@@ -3208,7 +3227,7 @@ g.map_diag(sns.kdeplot, lw=3)
 #    g.axes[i, j].set_visible(False)
 
 
-# In[327]:
+# In[75]:
 
 
 fig = plt.figure(figsize=(8,8))                                                               
@@ -3224,7 +3243,15 @@ sns.heatmap(corr, annot=True, cmap='viridis',  linewidths=.5, mask=mask, vmax=1,
         yticklabels=corr.columns)
 
 
-# In[468]:
+# In[77]:
+
+
+from __future__ import unicode_literals
+import joypy
+from matplotlib import cm
+
+
+# In[82]:
 
 
 # Import Data
@@ -3232,7 +3259,8 @@ sns.heatmap(corr, annot=True, cmap='viridis',  linewidths=.5, mask=mask, vmax=1,
 
 # Draw Plot
 plt.figure(figsize=(16,10), dpi= 80)
-fig, axes = joypy.joyplot(df_pair[df_pair['GroupSize']==4], column=['GroupHIMass', 'GroupStellarMass'], by="RoundedPercent", ylim='own', figsize=(14,10),hist=False, bins=50, overlap=1, colormap=[cm.viridis_r, cm.cividis_r])
+fig, axes = joypy.joyplot(df_pair[df_pair['GroupSize']==4], column=['GroupHIMass', 'GroupStellarMass'], by="RoundedPercent", ylim='own', figsize=(14,10),hist=False, bins=50, overlap=1, 
+                          colormap=[cm.viridis_r, cm.cividis_r])
 #axes = joypy.joyplot(df_pair[df_pair['GroupSize']==3], column=['GroupHIMass'], by="RoundedPercent", ylim='own', figsize=(14,10),hist=False, bins=50, overlap=2, colormap=[cm.cividis_r])
 
 # Decoration
@@ -3243,6 +3271,50 @@ axes[-1].set_xlabel(r' log M$_{\textrm{group}}$ [M$_{\odot}$]', fontsize=25)
 #plt.xaxis('A')
 plt.show()
 
+
+# In[143]:
+
+
+f, axes = plt.subplots(11,3, figsize=(14,10))
+first_column = [axes[i][0] for i in range(11)]
+second_column = [axes[i][1] for i in range(11)]
+third_column = [axes[i][2] for i in range(11)]
+
+
+joypy.joyplot(df_pair[df_pair['GroupSize']==3], column=['GroupHIMass', 'GroupStellarMass'], by="RoundedPercent", ylim='own', figsize=(14,10),hist=False, bins=50, overlap=1, 
+                          colormap=[cm.viridis_r, cm.cividis_r], ax=first_column)
+joypy.joyplot(df_pair[df_pair['GroupSize']==4], column=['GroupHIMass', 'GroupStellarMass'], by="RoundedPercent", ylim='own', figsize=(14,10),hist=False, bins=50, overlap=1, 
+                          colormap=[cm.viridis_r, cm.cividis_r], ax=second_column)
+joypy.joyplot(df_pair[df_pair['GroupSize']==5], column=['GroupHIMass', 'GroupStellarMass'], by="RoundedPercent", ylim='own', figsize=(14,10),hist=False, bins=50, overlap=1, 
+                          colormap=[cm.viridis_r, cm.cividis_r], ax=third_column)
+
+axes[0][0].text(9.5, 1.4, "Groups of 3", color="k", fontsize=20)
+axes[0][1].text(10.4, 1.6, "Groups of 4", color="k", fontsize=20)
+axes[0][2].text(10.5, 5.8, "Groups of 5", color="k", fontsize=20)
+
+axes[0][0].text(7, -2, r'\% of HI in central (rounded)', rotation = 90, fontsize=20)
+
+#plt.title(r'\% of HI in central (rounded) vs. Group Mass', fontsize=22)
+
+plt.xlabel(r' log M$_{\textrm{group}}$ [M$_{\odot}$]', fontsize=25)
+
+plt.show()
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# # Also 'joy' plot in seaborn... 
+# ### Messes up with the legend colors ...
 
 # In[456]:
 
@@ -3322,12 +3394,46 @@ g.despine(bottom=True, left=True)
 # In[467]:
 
 
-from __future__ import unicode_literals
-import joypy
-from matplotlib import cm
+#sns.set(font_scale=1)
+#sns.set_style("ticks", {"xtick.major.size":10, "ytick.major.size":10,
+#						"xtick.minor.size":6,"ytick.minor.size":6})
+#sns.set_style({"xtick.direction": "in","ytick.direction": "in"})
+#
+#
+## Adding size, hue, palette and specify variables in vars
+#variables = ["Percent", "GroupHIMass", "Rvircen"]
+#g = sns.pairplot(df_pair, height=5, hue="GroupSize", palette="Purples", vars=variables,
+#                plot_kws = {'s': 80, 'edgecolor': 'k'})
+##g.map_diag(plt.hist, density=True)
+#g._legend.get_title().set_fontsize(20) 
+#
+#
+## Axis Labels
+#replacements = {"GroupStellarMass": r'log M$_{\star\textrm{group}}$ [M$_{\odot}$]', 
+#                "GroupHIMass"     : r'log M$_{\textrm{HI}\textrm{group}}$ [M$_{\odot}$]',
+#                "Percent"         : r'\% of HI in Central',
+#                "GroupSize"       : r'Group Size'}
+#
+#for i in range(len(variables)):
+#    for j in range(len(variables)):
+#        xlabel = g.axes[i][j].get_xlabel()
+#        ylabel = g.axes[i][j].get_ylabel()
+#        if xlabel in replacements.keys():
+#            g.axes[i][j].set_xlabel(replacements[xlabel], fontsize=17)
+#        if ylabel in replacements.keys():
+#            g.axes[i][j].set_ylabel(replacements[ylabel], fontsize=17)
+#            
+##Legend
+#for i in range(len(g.fig.get_children()[-1].texts)):
+#    label = g.fig.get_children()[-1].texts[i].get_text()
+#    if label in replacements.keys():
+#        g.fig.get_children()[-1].texts[i].set_text(replacements[label])
+#g.fig.get_children()[-1].set_bbox_to_anchor((1.05, 0.5, 0, 0))
+#
+#
 
 
-# In[470]:
+# In[85]:
 
 
 get_ipython().run_line_magic('matplotlib', 'inline')
