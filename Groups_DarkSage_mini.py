@@ -383,7 +383,7 @@ DS.columns
 # ### Cut based on the stellar mass
 # ### The HI mass: np.sum(G['DiscHI'],axis=1)
 
-# In[165]:
+# In[296]:
 
 
 #Mass resolution 8.6x10^8 Msun/h  
@@ -394,33 +394,33 @@ HI_mass_cut = np.sum(G['DiscHI'],axis=1) [ G['StellarMass']>0.06424 ]/h
 Mvir_mass_cut = G['Mvir'] [ G['StellarMass']>0.06424 ]/h
 
 
-# In[166]:
+# In[297]:
 
 
 #CENTRALS
-Mstellar_central_galaxies_cut = G['StellarMass'] [ (G['CentralGalaxyIndex']==G['GalaxyIndex']) & (G['StellarMass']>0.06424) & (G['LenMax']>=100) ]/h
-Mcoldgas_central_galaxies_cut = np.sum(G['DiscHI'],axis=1) [ (G['CentralGalaxyIndex']==G['GalaxyIndex']) & (G['StellarMass']>0.06424) & (G['LenMax']>=100) ]/h
-Mvir_central_galaxies_cut = G['Mvir'] [ (G['CentralGalaxyIndex']==G['GalaxyIndex']) & (G['StellarMass']>0.06424) & (G['LenMax']>=100)]/h
+Mstellar_central_galaxies_cut = G['StellarMass'] [ (G['CentralGalaxyIndex']==G['GalaxyIndex']) & (G['StellarMass']>0.06424) ]/h
+Mcoldgas_central_galaxies_cut = np.sum(G['DiscHI'],axis=1) [ (G['CentralGalaxyIndex']==G['GalaxyIndex']) & (G['StellarMass']>0.06424) ]/h
+Mvir_central_galaxies_cut = G['Mvir'] [ (G['CentralGalaxyIndex']==G['GalaxyIndex']) & (G['StellarMass']>0.06424) ]/h
 # Keeping all HI masses()
 
 
-# In[167]:
+# In[298]:
 
 
 #SATELLITES
-Mstellar_satellite_galaxies_cut = G['StellarMass'] [ (G['CentralGalaxyIndex']!=G['GalaxyIndex']) & (G['StellarMass']>0.06424)& (G['LenMax']>=100) ]/h
-Mcoldgas_satellite_galaxies_cut = np.sum(G['DiscHI'],axis=1) [ (G['CentralGalaxyIndex']!=G['GalaxyIndex']) & (G['StellarMass']>0.06424)& (G['LenMax']>=100)]/h
-Mvir_satellite_galaxies_cut = G['Mvir'] [ (G['CentralGalaxyIndex']!=G['GalaxyIndex']) & (G['StellarMass']>0.06424)& (G['LenMax']>=100) ]/h
+Mstellar_satellite_galaxies_cut = G['StellarMass'] [ (G['CentralGalaxyIndex']!=G['GalaxyIndex']) & (G['StellarMass']>0.06424) ]/h
+Mcoldgas_satellite_galaxies_cut = np.sum(G['DiscHI'],axis=1) [ (G['CentralGalaxyIndex']!=G['GalaxyIndex']) & (G['StellarMass']>0.06424)]/h
+Mvir_satellite_galaxies_cut = G['Mvir'] [ (G['CentralGalaxyIndex']!=G['GalaxyIndex']) & (G['StellarMass']>0.06424) ]/h
 
 
-# In[168]:
+# In[299]:
 
 
-Mlen_central = G['LenMax'] [ (G['CentralGalaxyIndex']==G['GalaxyIndex']) & (G['StellarMass']>0.06424)& (G['LenMax']>=100) ]/h
+Mlen_central = G['LenMax'] [ (G['CentralGalaxyIndex']==G['GalaxyIndex']) & (G['StellarMass']>0.06424)]/h
 print(min(Mlen_central))
 
 
-# In[169]:
+# In[300]:
 
 
 
@@ -2595,7 +2595,7 @@ def two_sided_histogram_difference_groups(x_cen_rich, y_cen_rich, x_cen_poor, y_
 
 # ## Groups Length-3
 
-# In[ ]:
+# In[291]:
 
 
 # Central gals which are more HI rich than the sum of their satellites --- also marks position of their satellites
@@ -2606,7 +2606,7 @@ two_sided_histogram_rich_groups(richer_central_s_m.ravel(), richer_central_hi_m.
 
 # # Extract rich(er) and poor(er) from all size-d groups
 
-# In[ ]:
+# In[292]:
 
 
 #Use dictionary and for each galaxy in "Groups" of 3 show central/satellite index
@@ -2639,7 +2639,7 @@ for i in range(3,10,1): #starting grom galaxy pairs
         print("")
 
 
-# In[ ]:
+# In[293]:
 
 
 #HI Masses, obtained from the indices: 
@@ -2667,14 +2667,14 @@ for item in all_poorer_sat_ind:
     all_poorer_sat_s_m.append(a_poorer_sat_s_m)
 
 
-# In[ ]:
+# In[294]:
 
 
 two_sided_histogram_rich(all_richer_central_s_m, all_richer_central_hi_m, 
                          all_poorer_central_s_m, all_poorer_central_hi_m) 
 
 
-# In[ ]:
+# In[295]:
 
 
 two_sided_histogram_rich_groups(all_richer_central_s_m.ravel(), all_richer_central_hi_m.ravel(), 

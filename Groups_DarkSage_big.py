@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[11]:
 
 
 import numpy as np
@@ -12,7 +12,7 @@ from tqdm import tqdm
 import time
 
 
-# In[35]:
+# In[12]:
 
 
 from jupyterthemes.stylefx import set_nb_theme
@@ -20,13 +20,13 @@ set_nb_theme('solarizedl')
 #set_nb_theme('solarizedd')
 
 
-# In[2]:
+# In[13]:
 
 
 np.__version__
 
 
-# In[3]:
+# In[14]:
 
 
 #LineProfiler
@@ -36,14 +36,14 @@ from __future__ import division
 get_ipython().run_line_magic('load_ext', 'line_profiler')
 
 
-# In[4]:
+# In[15]:
 
 
 from IPython.core.display import display, HTML
 display(HTML("<style>.container { width:80% !important; }</style>"))
 
 
-# In[5]:
+# In[16]:
 
 
 def galdtype_darksage(Nannuli=30):
@@ -125,13 +125,13 @@ def galdtype_darksage(Nannuli=30):
 
 # # Plot
 
-# In[6]:
+# In[17]:
 
 
 #print(range(30,60))
 
 
-# In[6]:
+# In[18]:
 
 
 # Make plots for z=0 galaxies that are typically used to constrain Dark Sage.
@@ -178,7 +178,7 @@ else:
 ######  ================= #####
 
 
-# In[7]:
+# In[19]:
 
 
 ##### READ DARK SAGE DATA #####
@@ -187,7 +187,7 @@ G = r.darksage_snap(indir+fpre, files, Nannuli=Nannuli)
 ######  ================= #####
 
 
-# In[8]:
+# In[20]:
 
 
 ##### SET PLOTTING DEFAULTS #####
@@ -201,15 +201,20 @@ if not os.path.exists(outdir): os.makedirs(outdir)
 ######  =================== #####
 
 
-# In[10]:
+# # Make G dataftrame for galaxies with LenMax>=100
+
+# In[21]:
 
 
-#%store G
+# Make a sub_section of dataframe G so that it is controlled by the LenMax
+print(len(G['LenMax']))
+G = G [G['LenMax']>=100 ]
+print(len(G['LenMax']))
 
 
 # ## Want to store output as Pandas dataframe; Have to convert multidimensional arrays into Pandas series first:
 
-# In[61]:
+# In[22]:
 
 
 import pandas as pd
@@ -387,7 +392,7 @@ DS.columns
 # ### Cut based on the stellar mass
 # ### The HI mass: np.sum(G['DiscHI'],axis=1)
 
-# In[9]:
+# In[23]:
 
 
 #Mass resolution 8.6x10^8 Msun/h  
@@ -398,28 +403,28 @@ HI_mass_cut = np.sum(G['DiscHI'],axis=1) [ G['StellarMass']>0.06424 ]/h
 Mvir_mass_cut = G['Mvir'] [ G['StellarMass']>0.06424 ]/h
 
 
-# In[10]:
+# In[24]:
 
 
 print(len(Stellar_mass_cut))
 
 
-# In[11]:
+# In[25]:
 
 
 #CENTRALS
-Mstellar_central_galaxies_cut = G['StellarMass'] [ (G['CentralGalaxyIndex']==G['GalaxyIndex']) & (G['StellarMass']>0.06424) & (np.sum(G['DiscHI'],axis=1)!=0)]/h
-Mcoldgas_central_galaxies_cut = np.sum(G['DiscHI'],axis=1) [ (G['CentralGalaxyIndex']==G['GalaxyIndex']) & (G['StellarMass']>0.06424) & (np.sum(G['DiscHI'],axis=1)!=0)]/h
-Mvir_central_galaxies_cut = G['Mvir'] [ (G['CentralGalaxyIndex']==G['GalaxyIndex']) & (G['StellarMass']>0.06424) & (np.sum(G['DiscHI'],axis=1)!=0)]/h
+Mstellar_central_galaxies_cut = G['StellarMass'] [ (G['CentralGalaxyIndex']==G['GalaxyIndex']) & (G['StellarMass']>0.06424)]/h
+Mcoldgas_central_galaxies_cut = np.sum(G['DiscHI'],axis=1) [ (G['CentralGalaxyIndex']==G['GalaxyIndex']) & (G['StellarMass']>0.06424) ]/h
+Mvir_central_galaxies_cut = G['Mvir'] [ (G['CentralGalaxyIndex']==G['GalaxyIndex']) & (G['StellarMass']>0.06424) ]/h
 
 
-# In[12]:
+# In[26]:
 
 
 #SATELLITES
-Mstellar_satellite_galaxies_cut = G['StellarMass'] [ (G['CentralGalaxyIndex']!=G['GalaxyIndex']) & (G['StellarMass']>0.06424) & (np.sum(G['DiscHI'],axis=1)!=0)]/h
-Mcoldgas_satellite_galaxies_cut = np.sum(G['DiscHI'],axis=1) [ (G['CentralGalaxyIndex']!=G['GalaxyIndex']) & (G['StellarMass']>0.06424) & (np.sum(G['DiscHI'],axis=1)!=0)]/h
-Mvir_satellite_galaxies_cut = G['Mvir'] [ (G['CentralGalaxyIndex']!=G['GalaxyIndex']) & (G['StellarMass']>0.06424) & (np.sum(G['DiscHI'],axis=1)!=0)]/h
+Mstellar_satellite_galaxies_cut = G['StellarMass'] [ (G['CentralGalaxyIndex']!=G['GalaxyIndex']) & (G['StellarMass']>0.06424) ]/h
+Mcoldgas_satellite_galaxies_cut = np.sum(G['DiscHI'],axis=1) [ (G['CentralGalaxyIndex']!=G['GalaxyIndex']) & (G['StellarMass']>0.06424) ]/h
+Mvir_satellite_galaxies_cut = G['Mvir'] [ (G['CentralGalaxyIndex']!=G['GalaxyIndex']) & (G['StellarMass']>0.06424) ]/h
 
 
 # In[15]:
@@ -438,7 +443,7 @@ get_ipython().run_line_magic('store', 'Mvir_satellite_galaxies_cut')
 
 # # Plot MHI vs M* relation
 
-# In[11]:
+# In[27]:
 
 
 fig = plt.figure(figsize=(10,10))                                                               
@@ -456,15 +461,15 @@ plt.legend()
 plt.show()
 
 
-# In[12]:
+# In[29]:
 
 
 fig = plt.figure(figsize=(10,10))                                                               
 ax = fig.add_subplot(1,1,1)
 
 #plt.plot(cut_stell*1e10/h, 'o', color='r')
-plt.hist( np.log10(Mcoldgas_central_galaxies_cut*1e10), bins=100, color='lightgrey', alpha=0.8, label=r'Central galaxies [cut]')
-plt.hist(np.log10(Mcoldgas_satellite_galaxies_cut*1e10), bins=100, color='#1f78b4', alpha=1, label=r'Satellite galaxies [cut]')
+plt.hist( np.log10(Mcoldgas_central_galaxies_cut*1e10+1), bins=100, color='lightgrey', alpha=0.8, label=r'Central galaxies [cut]')
+plt.hist(np.log10(Mcoldgas_satellite_galaxies_cut*1e10+1), bins=100, color='#1f78b4', alpha=1, label=r'Satellite galaxies [cut]')
 
 
 ax.set_ylabel(r'N$_{\textrm{gal}}$', fontsize=25)
@@ -475,9 +480,10 @@ plt.legend()
 plt.show()
 
 
-# In[33]:
+# In[30]:
 
 
+# Should be the same with and without LenMax cut if I'm using the updated G dataframe where galaxies are already removed which have smaller LenMax
 LenMaxCut = 80
 
 Mlen_central = G['LenMax'] [ (G['CentralGalaxyIndex']==G['GalaxyIndex']) & (G['StellarMass']>0.06424)& (G['LenMax']>=LenMaxCut)]/h
@@ -499,7 +505,7 @@ print(len(Mlen_all_sat))
 #100 Particles: 198476  224682   73181   89552
 
 
-# In[27]:
+# In[31]:
 
 
 
@@ -528,17 +534,17 @@ plt.show()
 
 
 
-# In[36]:
+# In[33]:
 
 
 from matplotlib.ticker import NullFormatter
 
 # the random data
 x = np.log10( (Mstellar_satellite_galaxies_cut*10**10)) 
-y = np.log10( (Mcoldgas_satellite_galaxies_cut*10**10))
+y = np.log10( (Mcoldgas_satellite_galaxies_cut*10**10+1))
 
 w = np.log10( (Mstellar_central_galaxies_cut*10**10))
-z = np.log10( (Mcoldgas_central_galaxies_cut*10**10))
+z = np.log10( (Mcoldgas_central_galaxies_cut*10**10+1))
 
 nullfmt = NullFormatter()         # no labels
 
@@ -596,7 +602,7 @@ axScatter.legend()
 plt.show()
 
 
-# In[14]:
+# In[34]:
 
 
 fig = plt.figure(figsize=(10,10))                                                               
@@ -613,7 +619,7 @@ plt.legend()
 plt.show()
 
 
-# In[15]:
+# In[35]:
 
 
 fig = plt.figure(figsize=(10,10))                                                               
@@ -634,7 +640,7 @@ plt.show()
 # ## Bulge-to-total ratio (All)
 # ##### I want to see only late-type galaxies
 
-# In[37]:
+# In[36]:
 
 
 BTT = (G['InstabilityBulgeMass'] + G['MergerBulgeMass']) / ( G['StellarMass'] ) # Find bulge to total ratio
@@ -647,7 +653,7 @@ Disc_dominated_SM = G['StellarMass'][ (G['StellarMass']>0.06424) & (BTT <= 0.5) 
 Bulge_dominated_SM = G['StellarMass'][ (G['StellarMass']>0.06424) & (BTT > 0.5) ]
 
 
-# In[17]:
+# In[37]:
 
 
 fig = plt.figure(figsize=(10,10))                                                               
@@ -671,7 +677,7 @@ plt.show()
 
 
 
-# In[32]:
+# In[38]:
 
 
 from matplotlib.ticker import NullFormatter
@@ -763,7 +769,7 @@ plt.show()
 
 # ## Find galaxies
 
-# In[28]:
+# In[39]:
 
 
 Sat_inds = np.where( G['CentralGalaxyIndex']!=G['GalaxyIndex'])[0]
@@ -778,7 +784,7 @@ print('unique central ID', central_IDs[:10])
 
 # ## Extract indices and masses of central galaxies
 
-# In[38]:
+# In[40]:
 
 
 store_cen_indices = []
@@ -787,7 +793,7 @@ store_cen_indices = np.where(G["Type"] == 0)[0]
 
 # ## Extract indices and masses of ALL galaxies in a halo
 
-# In[39]:
+# In[41]:
 
 
 central_IDs, unique_counts = np.unique(G["CentralGalaxyIndex"], return_counts=True) #find unique ids
@@ -815,7 +821,7 @@ for group in store_all_indices:
         print(group)
 
 
-# In[21]:
+# In[42]:
 
 
 print(store_cen_indices[0:5])
@@ -825,7 +831,7 @@ print(store_all_indices[0:5])
 # # Create dictionary for group sizes 
 # ### Based on the number of galaxies in a group
 
-# In[40]:
+# In[43]:
 
 
 groups = {} #initiate groups dictionary
@@ -846,7 +852,7 @@ for item in trange(len(store_all_indices)):
 
 # # Single galaxies
 
-# In[41]:
+# In[44]:
 
 
 # SINGLE CENTRALS
@@ -865,7 +871,7 @@ for group in groups[Group_of_one]:
     single_gal_ind.append(single_gal_idx)
 
 
-# In[42]:
+# In[45]:
 
 
 Mstellar_single_gal = G["StellarMass"][single_gal_ind]*1e10/h
@@ -874,14 +880,15 @@ Mvir_single_gal = G["Mvir"][single_gal_ind]*1e10/h
 BTT_single = (G['InstabilityBulgeMass'][single_gal_ind]*1e10/h + G['MergerBulgeMass'][single_gal_ind]*1e10/h) / ( G['StellarMass'][single_gal_ind]*1e10/h )
 
 
-# In[25]:
+# In[47]:
 
 
-print(len(G["StellarMass"][ (G["StellarMass"] > Mass_cutoff) & (G['Len']>=100) ]))
+#These two should be the same if I'm using subsample of G wherer LenMax cut is already applied
+print(len(G["StellarMass"][ (G["StellarMass"] > Mass_cutoff) & (G['LenMax']>=100) ]))
 print(len(G["StellarMass"][ (G["StellarMass"] > Mass_cutoff)]))
 
 
-# In[26]:
+# In[48]:
 
 
 
@@ -902,13 +909,13 @@ plt.show()
 # # All galaxies in groups that are N=given N
 # #### if **any galaxy in the group** has Mass less than `Mass_cutoff`, we don't plot the entire group
 
-# In[43]:
+# In[49]:
 
 
 Mass_cutoff = 0.06424
 
 
-# In[44]:
+# In[50]:
 
 
 print(G["StellarMass"][groups[15][1]] > Mass_cutoff)
@@ -917,13 +924,13 @@ print(G["StellarMass"][groups[15][1]])
 
 # ### Separated centrals and satellites
 
-# In[24]:
+# In[52]:
 
 
 #print(G["StellarMass"][groups[4][0]] < Mass_cutoff)
 #print(G["StellarMass"][groups[4][0]])
 
-Group_size = 2 # select number of galaxies per group
+Group_size = 4 # select number of galaxies per group
 
 fig = plt.figure(figsize=(10,10))                                                               
 ax = fig.add_subplot(1,1,1)
@@ -1077,7 +1084,7 @@ plt.show()
 
 # # Create cen & sat from groups dictionary
 
-# In[45]:
+# In[54]:
 
 
 def create_cen_sat_from_groups_dict(groups, store_cen_indices, my_mass_cutoff=Mass_cutoff):
@@ -1131,8 +1138,6 @@ def create_cen_sat_from_groups_dict(groups, store_cen_indices, my_mass_cutoff=Ma
             
             if (G["StellarMass"][group] < my_mass_cutoff).any(): #creates array of booleans; if theese are true hit continue
                 continue
-            if (G['LenMax'][group] < 70).any():
-                continue
             
             halo_groups.append(group)
             
@@ -1169,7 +1174,7 @@ def create_cen_sat_from_groups_dict(groups, store_cen_indices, my_mass_cutoff=Ma
                     
 
 
-# In[46]:
+# In[55]:
 
 
 #This is updated dictionary which one can parse to the plotting function:
@@ -1203,13 +1208,34 @@ updated_dict[3]["Groups"]["Group_10"] #shows indices for 10th Group in Groups of
 
 # ### Check group sizes
 
-# In[47]:
+# In[58]:
 
 
-for i in trange(1,20):
-    print(i, len(updated_dict[i]["Groups"].keys()))
-#    
-#print(updated_dict[20]['Groups'].keys())
+#How many groups are present and what is their length?
+Group_statistics = []
+Group_len = np.arange(100)
+for i in trange(0,100):
+    try:
+        #print(i, len(updated_dict[i]["Groups"].keys()))
+        Group_statistics.append(len(updated_dict[i]["Groups"].keys()))
+    except KeyError:
+        Group_statistics.append(0)
+        continue
+       #print(i, 'No such group length')
+
+df_groups = pd.DataFrame({'GroupLength'            : Group_len,
+                           'NumberNlengthGroups'    : Group_statistics })
+
+#print(df_groups[1:])
+fig = plt.figure(figsize=(10,10))                                                               
+ax = fig.add_subplot(1,1,1)
+plt.plot(df_groups['GroupLength'][2:], df_groups['NumberNlengthGroups'][2:], marker='o', label='Groups in DarkSage');
+ax.set_yscale('log')
+plt.axhline(1, 0, label='1 Group', color='k')
+plt.xlabel('Group Size')
+plt.ylabel('Number of Groups')
+plt.legend(loc=1)
+plt.show();
 
 
 # In[ ]:
@@ -1218,7 +1244,7 @@ for i in trange(1,20):
 
 
 
-# In[48]:
+# In[59]:
 
 
 # Initiate figure and how large it will be
@@ -1304,7 +1330,7 @@ def mhi_vs_ms_3x3(groups_dict):
     #return fig
 
 
-# In[49]:
+# In[60]:
 
 
 #Use line_profiler to test how fast is each line of the code
@@ -2547,13 +2573,13 @@ two_sided_histogram_rich_groups(all_richer_central_s_m.ravel(), all_richer_centr
 # # See the distribution of groups where central galaxy is X% HI richer than the sum of the satellites around that central
 # ### Percent = M_HI_central/ (Sum[ M_HI_satellites ])
 
-# In[50]:
+# In[61]:
 
 
 per_cent_with_pairs =[]
 
 
-# In[51]:
+# In[62]:
 
 
 #Use dictionary and for each galaxy in "Groups" of 3 show central/satellite index
@@ -2577,13 +2603,13 @@ group_HI_mass = []
 group_St_mass = []
 
 
-# In[52]:
+# In[63]:
 
 
 #BTT_central[0]
 
 
-# In[53]:
+# In[64]:
 
 
 # STORE INDICES
@@ -2604,7 +2630,7 @@ for i in trange(3,21,1): #starting grom galaxy pairs
         s_ind.append(satellite_inds)
 
 
-# In[54]:
+# In[65]:
 
 
 # Compute central galaxies
@@ -2612,7 +2638,7 @@ central_mass = np.sum(G['DiscHI'],axis=1)[c_ind]*1e10/h
 central_st_mass = G['StellarMass'][c_ind]*1e10/h
 
 
-# In[55]:
+# In[66]:
 
 
 # Compute group properties 
@@ -2626,7 +2652,7 @@ for i in tqdm(g_ind):
     
 
 
-# In[56]:
+# In[67]:
 
 
 # Compute percentage
@@ -2638,7 +2664,7 @@ percentage = (central_mass.ravel()/g_m)*100
 #print(percentage)
 
 
-# In[57]:
+# In[68]:
 
 
 
@@ -2664,7 +2690,7 @@ leg.legendHandles[0].set_color('k')
 #plt.savefig('Groups_HIinCentral.png')
 
 
-# In[58]:
+# In[69]:
 
 
 #Bulge-to-total ratio
@@ -2716,7 +2742,7 @@ plt.legend(loc=1)
 plt.show()
 
 
-# In[59]:
+# In[70]:
 
 
 grp_length = []
@@ -2725,7 +2751,7 @@ for i in g_ind:
     grp_length.append(size)
 
 
-# In[62]:
+# In[71]:
 
 
 df_percent = pd.DataFrame({'GroupStellarMass'   : g_st,
@@ -2739,13 +2765,13 @@ df_percent = pd.DataFrame({'GroupStellarMass'   : g_st,
 #print(df_percent)
 
 
-# In[63]:
+# In[72]:
 
 
 print(df_percent['BTT_central'][0:4])
 
 
-# In[51]:
+# In[73]:
 
 
 
@@ -2788,7 +2814,7 @@ leg.legendHandles[0].set_color('k')
 plt.savefig('Groups_HIinCentral.png')
 
 
-# In[52]:
+# In[74]:
 
 
 HI_per_cent = 50
@@ -2832,7 +2858,7 @@ leg.legendHandles[0].set_color('k')
 plt.savefig('Groups_HIinCentral.png')
 
 
-# In[290]:
+# In[75]:
 
 
 
@@ -2875,7 +2901,7 @@ leg.legendHandles[0].set_color('k')
 plt.savefig('Groups_HIinCentral.png')
 
 
-# In[54]:
+# In[76]:
 
 
 
@@ -2920,7 +2946,7 @@ leg.legendHandles[0].set_color('lightgrey')
 
 # # Fixed N-sized groups
 
-# In[64]:
+# In[77]:
 
 
 Nsize_group = 3
@@ -2964,13 +2990,13 @@ leg.legendHandles[0].set_color('k')
 plt.savefig('Groups_HIinCentral.png')
 
 
-# In[65]:
+# In[78]:
 
 
 import seaborn as sns
 
 
-# In[57]:
+# In[79]:
 
 
 
@@ -2980,7 +3006,7 @@ import seaborn as sns
 #matplotlib.rcParams.update({'font.size': fsize, 'xtick.major.size': 10, 'ytick.major.size': 10, 'xtick.major.width': 1, 'ytick.major.width': 1, 'ytick.minor.size': 5, 'xtick.minor.size': 5, 'xtick.direction': 'in', 'ytick.direction': 'in', 'axes.linewidth': 1, 'text.usetex': True, 'font.family': 'serif', 'font.serif': 'Times New Roman', 'legend.numpoints': 1, 'legend.columnspacing': 1, 'legend.fontsize': fsize-4, 'xtick.top': True, 'ytick.right': True})
 
 
-# In[66]:
+# In[80]:
 
 
 High_percentage = 80
@@ -3029,7 +3055,7 @@ leg.legendHandles[1].set_color('plum')
 plt.show()
 
 
-# In[67]:
+# In[81]:
 
 
 High_percentage = 50
@@ -3082,7 +3108,7 @@ leg.legendHandles[1].set_color('plum')
 plt.show()
 
 
-# In[68]:
+# In[82]:
 
 
 matplotlib.__version__ #has to be 3.0.3; For sure is not working with 2.2.2
@@ -3095,7 +3121,7 @@ from chainconsumer import ChainConsumer
 #%matplotlib inline
 
 
-# In[69]:
+# In[83]:
 
 
 High_percentage = 60
@@ -3119,7 +3145,7 @@ fig.set_size_inches(5.5 + fig.get_size_inches())  # Resize fig for doco. You don
 plt.show()
 
 
-# In[296]:
+# In[84]:
 
 
 High_percentage = 60
@@ -3179,7 +3205,7 @@ fig.set_size_inches(4.5 + fig.get_size_inches())  # Resize fig for doco. You don
 
 # # Pair plot
 
-# In[80]:
+# In[85]:
 
 
 import math
@@ -3194,7 +3220,7 @@ for i in df_percent['Percent']:
 print(rounded_per[0:10])
 
 
-# In[81]:
+# In[86]:
 
 
 df_pair = pd.DataFrame({'GroupStellarMass'      : np.log10(g_st),
@@ -3207,7 +3233,7 @@ df_pair = pd.DataFrame({'GroupStellarMass'      : np.log10(g_st),
                            'RoundedPercent'     : rounded_per})
 
 
-# In[74]:
+# In[87]:
 
 
 
@@ -3227,7 +3253,7 @@ g.map_diag(sns.kdeplot, lw=3)
 #    g.axes[i, j].set_visible(False)
 
 
-# In[75]:
+# In[88]:
 
 
 fig = plt.figure(figsize=(8,8))                                                               
@@ -3243,7 +3269,7 @@ sns.heatmap(corr, annot=True, cmap='viridis',  linewidths=.5, mask=mask, vmax=1,
         yticklabels=corr.columns)
 
 
-# In[77]:
+# In[89]:
 
 
 from __future__ import unicode_literals
@@ -3251,7 +3277,7 @@ import joypy
 from matplotlib import cm
 
 
-# In[82]:
+# In[90]:
 
 
 # Import Data
@@ -3272,7 +3298,7 @@ axes[-1].set_xlabel(r' log M$_{\textrm{group}}$ [M$_{\odot}$]', fontsize=25)
 plt.show()
 
 
-# In[143]:
+# In[91]:
 
 
 f, axes = plt.subplots(11,3, figsize=(14,10))
