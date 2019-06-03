@@ -2,9 +2,12 @@ from __future__ import print_function # Always do this >:(
 from __future__ import division
 #%load_ext line_profiler
 
+import matplotlib
+matplotlib.use("Agg")
+
+
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib
 from matplotlib.ticker import NullFormatter
 from matplotlib.backends.backend_pdf import PdfPages
 import itertools
@@ -950,7 +953,7 @@ def find_richer_central_for_Nsized_group(grp_length):
     plt.savefig("./plots/HI_richer_and_poorer_centrals.png")
 
        
-    return richer_central_ind, poorer_central_ind, richer_sat_ind, poorer_sat_ind, richer_central_s_m, richer_central_hi_m, poorer_central_s_m, poorer_central_hi_m 
+    return richer_central_ind, poorer_central_ind, richer_sat_ind, poorer_sat_ind, richer_central_s_m, richer_central_hi_m, poorer_central_s_m, poorer_central_hi_m, richer_sat_hi_m, poorer_sat_hi_m, richer_sat_s_m, poorer_sat_s_m
 
 
 
@@ -1006,8 +1009,11 @@ def two_sided_histogram_rich(x_cen_rich, y_cen_rich, x_cen_poor, y_cen_poor):
     rect_histx = [left, bottom_h, width, 0.2]
     rect_histy = [left_h, bottom, 0.2, height]
     
-    # start with a rectangular Figure
-    plt.figure(1, figsize=(12, 12))
+    ## start with a rectangular Figure
+    
+    fig = plt.figure(figsize=(10,10)) 
+    #
+    #plt.figure(1, figsize=(12, 12))
     
     axScatter = plt.axes(rect_scatter)
     axHistx = plt.axes(rect_histx)
@@ -1047,14 +1053,241 @@ def two_sided_histogram_rich(x_cen_rich, y_cen_rich, x_cen_poor, y_cen_poor):
 
     axScatter.legend(loc=3)
 
+    plt.savefig("./plots/Two_sided_HI_richer_and_poorer_centrals.png")
 
-    return plt.show()
+
+    return 
+    
+@jit
+def two_sided_histogram_rich_groups(grp_length, x_cen_rich, y_cen_rich, x_cen_poor, y_cen_poor,
+                                   x_sat_rich, y_sat_rich, x_sat_poor, y_sat_poor):
+    """
+    Make a scatter plot with 8 datasets and then place histogram on both x and y axis for them as rich/poor central groups. 
+    Here I use logMhi vesus logMstar -- other data will need readjustment of the min/max.
+    
+    Parameters
+    ==========
+    grp_lenght: Integer. Number of galaxies within a group.
+
+    x_cen_rich, y_cen_rich: x and y values of the first dataset - here are centrals which are HI richer than their
+                            satellites. Floats. Should be list/array; use .ravel() if needed
+                            to reduce the dimensionality.  
+                            In this case, I am using logMHI and logMstar of central galaxies.
+    
+    x_cen_poor, y_cen_poor: x and y values of the second dataset - here are centrals which are poorer than their
+                            satellites. Should be list/array; use .ravel() if needed to reduce the dimensionality.
+                            In this case, I am using logMHI and logMstar of satellite galaxies.                        
+        
+    x_sat_rich, y_sat_rich, x_sat_poor, y_sat_poor:
+                            Same as above; just uses satellites around their respective central galaxy.
+    
+    Returns
+    =======
+    A scatter plot with histogram on x and y axis for both datasets. 
+    
+    Usage
+    =====
+    To use type: ``two_sided_histogram_rich_groups(richer_central_s_m.ravel(), richer_central_hi_m.ravel(), poorer_central_s_m.ravel(), poorer_central_hi_m.ravel(),
+                                richer_sat_s_m.ravel(), richer_sat_hi_m.ravel(), poorer_sat_s_m.ravel(), poorer_sat_hi_m.ravel()) ``
+               I extracted satellite and central gal from dictionary using ``updated_dict`` and 
+               group_size=2 for pairs -- can be any group_size number
+                Indices:
+                central_idx = updated_dict[3]["Groups"][group_key]["Centrals"]
+                satellite_inds = updated_dict[3]["Groups"][group_key]["Satellites"]
+                
+                To this, condition is added which check the mass of the central vs. satellites.
+                
+                
+    """
+
+    
+    nullfmt = NullFormatter()         # no labels
+
+    x = x_cen_rich    
+
+    # definitions for the axes
+    left, width = 0.1, 0.65
+    bottom, height = 0.1, 0.65
+    bottom_h = left_h = left + width + 0.02
+    
+    rect_scatter = [left, bottom, width, height]
+    rect_histx = [left, bottom_h, width, 0.2]
+    rect_histy = [left_h, bottom, 0.2, height]
+    
+    # start with a rectangular Figure
+    fig = plt.figure(figsize=(10,10)) 
+    #plt.figure(1, figsize=(12, 12))
+    
+    axScatter = plt.axes(rect_scatter)
+    axHistx = plt.axes(rect_histx)
+    axHisty = plt.axes(rect_histy)
+    
+    # no labels
+    axHistx.xaxis.set_major_formatter(nullfmt)
+    axHisty.yaxis.set_major_formatter(nullfmt)
+    
+    # the scatter plot:
+    axScatter.scatter(x_cen_rich, y_cen_rich, color='white', edgecolor='#2c7fb8', s=80, linewidth=2, label='HI rich(er) central')
+    axScatter.scatter(x_sat_rich, y_sat_rich, color='#2c7fb8', edgecolor='#2c7fb8', s=80, linewidth=2, label='HI rich(er) central\'s satellite')
+
+    axScatter.scatter(x_cen_poor, y_cen_poor, color='white', edgecolor='lightgrey', s=80, linewidth=2, label='HI poor(er) central', alpha=0.8)
+    axScatter.scatter(x_sat_poor, y_sat_poor, color='lightgrey', edgecolor='lightgrey', s=80, linewidth=2, label='HI poor(er) central\'s satellite', alpha=0.8)
+    
+    
+    axScatter.set_xlabel(r'log M$_{\star}$ [M$_{\odot}$]', fontsize=25)
+    axScatter.set_ylabel(r'log M$_{\textrm{HI}}$ [M$_{\odot}$]',fontsize=25)
+
+    # now determine nice limits by hand:
+    binwidth = 0.1
+    xymax = np.max([np.max(np.fabs(x)), np.max(np.fabs(x))])
+    lim = (int(xymax/binwidth) + 1) * binwidth
+    
+    axScatter.set_xlim((8.5, 11.7))
+    axScatter.set_ylim((5.8, 11.7))
+    
+    bins = np.arange(5.8, lim + binwidth, binwidth)
+   
+    x_rich = sorted(list(set(x_cen_rich)) + list(set(x_sat_rich)))
+    y_rich = sorted(list(set(y_cen_rich)) + list(set(y_sat_rich)))
+    
+    x_poor = sorted(list(set(x_cen_poor)) + list(set(x_sat_poor)))
+    y_poor = sorted(list(set(y_cen_poor)) + list(set(y_sat_poor)))
+    
+    axHistx.hist(x_rich, bins=bins, color='#2c7fb8', alpha=0.6, edgecolor='k', linewidth=1)
+    axHisty.hist(y_rich, bins=bins, orientation='horizontal', alpha=0.6, color='#2c7fb8', edgecolor='k', linewidth=1)
+    
+    axHistx.hist(x_poor, bins=bins, color='lightgrey',alpha=0.4, edgecolor='k', linewidth=1)
+    axHisty.hist(y_poor, bins=bins, orientation='horizontal', color='lightgrey', alpha=0.4, edgecolor='k', linewidth=1) 
+
+    axHistx.set_ylabel(r'N$_{\textrm{gal}}$', fontsize=22)
+    axHisty.set_xlabel(r'N$_{\textrm{gal}}$', fontsize=22)
+    
+    axHistx.set_xlim(axScatter.get_xlim())
+    axHisty.set_ylim(axScatter.get_ylim())
+
+    leg = axScatter.legend(loc=3, fontsize=13)
+
+    leg.set_title('Group size = {0}'.format(grp_length)) 
+    plt.savefig("./plots/Two_sided_rich_groups.png")
+
+
+    return    
+
+def group_indices_for_percentage(updated_dict):
+    """
+    Extract group based indices of centrals, satellites and all (from the same halo/group).
+
+    Parameters:
+    ==========
+    updated_dict: Nested dictionary. Keyed by the `groups`.
+                  Contains Centrals and Satellites which are in groups where galaxies are above the my_mass_cutoff
+   	
+    Returns:
+    ========
+    c_ind: List of integers. Central galaxies.
+    s_ind: List of integers. Satellite galaxies.
+    g_ind: List of integers. Halo galaxies. Needed for computation of the group properties.
+
+    """
+
+    # STORE INDICES
+
+    c_ind = []
+    s_ind = []
+    g_ind = []
+
+    for i in trange(3,21,1): #starting grom galaxy pairs
+        for group_key in updated_dict[i]["Groups"].keys():
+            central_idx = updated_dict[i]["Groups"][group_key]["Centrals"] #give indices
+            c_ind.append(central_idx)
+                   
+            all_idx = updated_dict[i]["Groups"][group_key]["Centrals"]+updated_dict[i]["Groups"][group_key]["Satellites"]
+            g_ind.append(all_idx)
+            
+            satellite_inds = updated_dict[i]["Groups"][group_key]["Satellites"]
+            s_ind.append(satellite_inds)
+
+    return c_ind, s_ind, g_ind
+
+
+@jit
+def compute_group_properties(c_ind, s_ind, g_ind):
+    """
+    Compute properties of the groups. Used for calculation of the % of the HI in the central galaxy.
+
+    Parameters:
+    ==========
+    c_ind: List of integers. Central galaxies.
+    s_ind: List of integers. Satellite galaxies.
+    g_ind: List of integers. Contain galaxies within the group.
+
+    Returns:
+    =======
+    g_m: group HI mass.
+    g_st: group stellar mass.
     
 
+    """
+
+    # Compute group properties 
+    g_m = []
+    g_st = []
+
+    for i in tqdm(g_ind):
+        g_mass = np.sum(G['DiscHI'],axis=1)[i]*1e10/h
+        g_st_mass = G['StellarMass'][i]*1e10/h
+        g_m.append(np.sum(g_mass))
+        g_st.append(np.sum(g_st_mass))
+
+    
+    # Compute central galaxies
+    central_mass = np.sum(G['DiscHI'],axis=1)[c_ind]*1e10/h
+    central_st_mass = G['StellarMass'][c_ind]*1e10/h
+    
+    # Compute percentage
+    percentage = (central_mass.ravel()/g_m)*100
+
+    return g_m, g_st, percentage
 
 
+def plot_per_cent_of_HI_in_central(g_m, g_st, percentage):
+
+    """
+    Make a plot with group paramteres (stellar mass vs HI mass) and a colormap is % of the HI in central with respect to group HI mass.
+       
+    Parameters:
+    ===========
+    g_m: List of floats. Group HI mass.
+    g_st: List of floats. Group stellar mass.
+    percentage: List of floats. Percent of HI in central galaxy with respect to entire group HI content.
+
+    Returns:
+    =======
+    Saves plot.
+
+    """
 
 
+    fig = plt.figure(figsize=(13,10))                                                               
+    ax = fig.add_subplot(1,1,1)
+
+    cm = plt.cm.get_cmap('YlGnBu')
+
+
+    im = plt.scatter(np.log10(g_st), np.log10(g_m), s=100,
+                            c=percentage, edgecolor='k', cmap=cm, label=r'Groups ($N\geq3$) properties')
+
+    fig.colorbar(im, ax=ax, orientation='vertical', label=r'\% of the M$_{\mathrm{HI}}$ in central',
+                pad=0.01)
+
+    ax.set_xlabel(r'log M$_{\star}$ [M$_{\odot}$]', fontsize=25)
+    ax.set_ylabel(r'log M$_{\textrm{HI}}$ [M$_{\odot}$]',fontsize=25)
+    ax.legend(loc=3)
+    leg = ax.get_legend()
+    leg.legendHandles[0].set_color('k')
+
+    plt.savefig('./plots/Percent_HIinCentral.png')
+    return 
 
 
 
@@ -1067,7 +1300,9 @@ if __name__ == "__main__":
     number_of_files = 5
     h = 0.73
     group_size_for_two_sided = 2
-    grp_length = 5
+    
+        
+    
     
     indir = '/fred/oz042/rdzudzar/simulation_catalogs/darksage/millennium_latest/output/' # directory where the Dark Sage data are
 
@@ -1091,21 +1326,43 @@ if __name__ == "__main__":
 	#This is updated dictionary which one can parse to the plotting function:
     updated_dict = create_cen_sat_from_groups_dict(groups, store_cen_indices) 
 
+    # For two-sided histogram richer/poorer 
+    grp_length = 5 
+    richer_central_ind, poorer_central_ind, richer_sat_ind, poorer_sat_ind, richer_central_s_m, richer_central_hi_m, poorer_central_s_m, poorer_central_hi_m,  richer_sat_hi_m, poorer_sat_hi_m, richer_sat_s_m, poorer_sat_s_m = find_richer_central_for_Nsized_group(grp_length)
 
 
 
-	# Make all the plots
-
+    ########################################################################################################
+    ########################################### Make all the plots #########################################
+    ########################################################################################################
+    
 	#plot_len_max(G)
 	#plot_single_galaxies(G, single_gal_ind)	
 	#plot_group_numbers_and_sizes(updated_dict)
 	#plot_mhi_vs_ms_3x3(updated_dict)
 
 	#two_sided_histogram_group_and_single(updated_dict, group_size_for_two_sided)
-	#two_sided_histogram_groups(updated_dict, group_size_for_two_sided)
+    #two_sided_histogram_groups(updated_dict, group_size_for_two_sided)
 	#hist_Mhi_vs_Mstar_each_group(updated_dict)
-    find_richer_central_for_Nsized_group(grp_length)
+ 
+
+    #find_richer_central_for_Nsized_group(grp_length)
 
     #Centrals more HI rich than the sum of their satellites
-    two_sided_histogram_rich(richer_central_s_m, richer_central_hi_m, poorer_central_s_m, poorer_central_hi_m) 
+    #two_sided_histogram_rich(richer_central_s_m, richer_central_hi_m, poorer_central_s_m, poorer_central_hi_m) 
+   
+
+    #Central gals which are more HI rich than the sum of their satellites --- also marks position of their satellites
+    # And vice versa
+    #two_sided_histogram_rich_groups(grp_length, richer_central_s_m.ravel(), richer_central_hi_m.ravel(), poorer_central_s_m.ravel(), poorer_central_hi_m.ravel(),
+    #                            richer_sat_s_m.ravel(), richer_sat_hi_m.ravel(), poorer_sat_s_m.ravel(), poorer_sat_hi_m.ravel())
     
+    # Group indices
+    c_ind, s_ind, g_ind = group_indices_for_percentage(updated_dict)
+    
+    # Compute group masses (HI and stellar) 
+    g_m, g_st, percentage = compute_group_properties(c_ind, s_ind, g_ind)
+    
+    plot_per_cent_of_HI_in_central(g_m, g_st, percentage)
+
+
