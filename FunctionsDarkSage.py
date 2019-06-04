@@ -1,5 +1,7 @@
 from __future__ import print_function # Always do this >:( 
 from __future__ import division
+from __future__ import unicode_literals
+
 #%load_ext line_profiler
 
 import matplotlib
@@ -14,9 +16,14 @@ import itertools
 from tqdm import trange
 from tqdm import tqdm
 import time
+import math
 from numba import jit
 import pandas as pd
-
+import seaborn as sns
+# joypy
+import joypy
+from matplotlib import cm
+from matplotlib.colors import LinearSegmentedColormap
 # Import code for reading in the data from Dark Sage
 
 import pylab
@@ -34,6 +41,28 @@ matplotlib.rcParams.update({'font.size': fsize, 'xtick.major.size': 10, 'ytick.m
 
 ######  =================== #####
 
+def cut_colormap(colormap_name, start, end):
+    """
+    Remove part of the colormap and create new one as 'cmap'
+    
+    Parameters:
+    ==========
+    colormap_name: Name of the colormap. Example: `plt.cm.viridis`
+    start: Float from 0 to 1, starting color value.
+    end: Float from 0 to 1, has to be bigger than `start`, ending color value.
+
+    Returns:
+    =======
+    cmap: Eddited colormap.
+    """
+
+    # Remove from 0 to 0.15 in the colorbar
+    interval = np.hstack([np.linspace(start, end)])
+    colors = colormap_name(interval)
+    cmap = LinearSegmentedColormap.from_list('name', colors)
+    cmap.set_under(color='white')
+
+    return cmap
 
 @jit
 def galdtype_darksage(Nannuli=30):
@@ -1223,31 +1252,46 @@ def compute_group_properties(c_ind, s_ind, g_ind):
 
     Returns:
     =======
-    g_m: group HI mass.
-    g_st: group stellar mass.
-    
+    g_m: Floats. Group HI mass.
+    g_st: Floats. Group stellar mass.
+    percentage: Floats. % of HI in central galaxy.
+    BTT_cen: Floats. Bulge to total ratio for central galaxy.
+    Mvir_cen: Floats. Virial mass of central galaxy. 
+    Rvir_cen: Floats. Virial raius of central galaxy.
 
     """
 
     # Compute group properties 
     g_m = []
     g_st = []
+    group_length = []
 
     for i in tqdm(g_ind):
         g_mass = np.sum(G['DiscHI'],axis=1)[i]*1e10/h
         g_st_mass = G['StellarMass'][i]*1e10/h
         g_m.append(np.sum(g_mass))
         g_st.append(np.sum(g_st_mass))
-
+        
+        # Extract group length
+        size = len(i)
+        group_length.append(size)
     
     # Compute central galaxies
     central_mass = np.sum(G['DiscHI'],axis=1)[c_ind]*1e10/h
     central_st_mass = G['StellarMass'][c_ind]*1e10/h
     
+    #Compute bulge to total ratio of the central galaxy
+    BTT_cen = (G['InstabilityBulgeMass'][c_ind] + G['MergerBulgeMass'][c_ind]) / ( G['StellarMass'][c_ind] )
+    
+    # Virial mass and radius
+    Mvir_cen = np.log10( (G['Mvir'][c_ind])*1e10/h)
+    Rvir_cen = G['Rvir'][c_ind]
+
     # Compute percentage
     percentage = (central_mass.ravel()/g_m)*100
+    print('Computed percentage of HI in central')
 
-    return g_m, g_st, percentage
+    return g_m, g_st, percentage, BTT_cen, Mvir_cen, Rvir_cen, group_length
 
 
 def plot_per_cent_of_HI_in_central(g_m, g_st, percentage):
@@ -1289,21 +1333,232 @@ def plot_per_cent_of_HI_in_central(g_m, g_st, percentage):
     plt.savefig('./plots/Percent_HIinCentral.png')
     return 
 
+def make_dataframe_for_pairplot(g_st, g_m, percentage, group_length, BTT_cen, Mvir_cen, Rvir_cen):
+    """
+    Create a pandas dataframe.
+
+    Parameters:
+    ==========
+    g_m: List of floats. Group HI mass.
+    g_st: List of floats. Group stellar mass.
+    percentage: List of floats. Percent of HI in central galaxy with respect to entire group HI content.
+    BTT_cen: Floats. Bulge to total ratio for central galaxy.
+    Mvir_cen: Floats. Virial mass of central galaxy. 
+    Rvir_cen: Floats. Virial raius of central galaxy.
+    group_length: Integers. Number of galaxies in a group.
+
+    Returns:
+    =======
+    df_pair: Pandas dataframe.    
+    """
+
+    # Define what goes into dataframe
+    df_pair = pd.DataFrame({'GroupStellarMass'   : np.log10(g_st),
+                            'GroupHIMass'        : np.log10(g_m),
+                            'Percent'            : percentage,
+                            'GroupSize'          : group_length,
+                            'BTTcentral'         : BTT_cen.ravel() ,
+                            'Mvircen'            : Mvir_cen.ravel(),
+                            'Rvircen'            : Rvir_cen.ravel() })
+   
+    return df_pair
+
+def make_dataframe_for_joyplot(dataframe):
+    """
+    Make a dataframe with the RoundedPercentage - which is used only fot the joyplots.
+
+    Parameters:
+    dataframe = Dataframe, as obtained from the pairplot.
+
+    Returns:
+    df_joy - Dataframe. Used for making Joy plots with RoundedPercent as y-axis.
+
+    """
+
+    def roundup(x):
+        """
+        Round up number as ceil of 10. Used for dounded percentage values needed for joyplot.
+        """
+        return int(math.ceil(x / 10.0)) * 10 # Add whether it will be by increment of 5 or 10 or something third
+
+    rounded_per = []
+    for i in dataframe['Percent']:
+        A = roundup(i)#_test = (central_mass.ravel()/g_m)*100
+        rounded_per.append(A) 
 
 
+    df_joy = pd.DataFrame({'GroupStellarMass'   : np.log10(g_st),
+                            'GroupHIMass'        : np.log10(g_m),
+                            'Percent'            : percentage,
+                            'GroupSize'          : group_length,
+                            'BTTcentral'         : BTT_cen.ravel() ,
+                            'Mvircen'            : Mvir_cen.ravel(),
+                            'Rvircen'            : Rvir_cen.ravel(),
+                            'RoundedPercent'     : rounded_per})
+                       
+    return df_joy
+
+@jit
+def make_pair_plot(dataframe):
+    """
+    Make a pair plot.
+
+    Parameters:
+    ===========
+    dataframe: Pandas dataframe. Should contin all the properties that I want for pairplot.
+    
+    Returns:
+    ========
+    Saves Plot.
+
+    """
+    fig = plt.figure(figsize=(13,13)) 
+    ax = fig.add_subplot(1,1,1)
+    
+
+    sns.set(font_scale=1)
+    sns.set_style("ticks", {"xtick.major.size":10, "ytick.major.size":10,
+                            "xtick.minor.size":6,"ytick.minor.size":6})
+    sns.set_style({"xtick.direction": "in","ytick.direction": "in"})
+    
+    
+    g = sns.PairGrid(dataframe, diag_sharey=False)
+    g.map_lower(sns.kdeplot)
+    g.map_upper(sns.scatterplot)
+    g.map_diag(sns.kdeplot, lw=3)
+
+    # To hide upper scatter plot axies: axis
+    #for i, j in zip(*np.triu_indices_from(g.axes, 1)):
+    #    g.axes[i, j].set_visible(False)
+    plt.savefig("./plots/Pair_plot_groups.png")
+
+    #################################################### 
+    print('Made pair plot, now making pair correlation plot')
+    ####################################################
+    
+    # Make pair correlation plot
+    fig2 = plt.figure(figsize=(8,8))                                                               
+    ax = fig.add_subplot(1,1,1)
+
+    corr = dataframe.corr()
+
+    mask = np.zeros_like(corr, dtype=np.bool)
+    mask[np.triu_indices_from(mask)] = True
+
+    sns.heatmap(corr, annot=True, cmap='viridis',  linewidths=.5, mask=mask, vmax=1,
+            xticklabels=corr.columns,
+            yticklabels=corr.columns)
+
+    plt.savefig("./plots/Pair_correlation_plot_groups.png")
+
+    return dataframe
+
+
+def make_joy_plot(dataframe, group_size_joy, how_many_groups, colormap_one, colormap_two):
+    """
+    Make a joy plot for specific group, using two columns (two datasets) and sort them by third one.
+
+    Paremeters:
+    ==========
+    dataframe: Pandas dataframe.
+    group_size_joy: List of Integers. Specific length of the group.   
+    how_many_groups: Integer. Number of different groups to plot.
+    column_one: String. Column from the dataframe. One property.
+    column_two: String. Column from the dataframe. One property.
+    color_map_one: Name of the colormap. Example: `plt.cm.viridis`
+    color_map_two: Name of the colormap.    
+
+    Returns:
+    Saves plot.
+
+    """
+    if how_many_groups == 1:
+        
+        print('One group size is selected')
+        # Draw Plot
+        plt.figure(figsize=(16,10), dpi= 80)
+        
+        fig, axes = joypy.joyplot(dataframe[dataframe['GroupSize'] == group_size_joy], column = ['GroupHIMass', 'GroupStellarMass'], by = 'RoundedPercent', ylim = 'own', figsize = (14,10), hist = False, bins = 30, overlap = 2, 
+                                  colormap = [colormap_one, colormap_two], grid = True, legend = True)
+        #axes = joypy.joyplot(df_pair[df_pair['GroupSize']==3], column=['GroupHIMass'], by="RoundedPercent", ylim='own', figsize=(14,10),hist=False, bins=50, overlap=2, colormap=[cm.cividis_r])
+
+        # Decoration
+        plt.title(r'\% of HI in central (rounded) vs. Group Mass', fontsize=22)
+        axes[-1].set_xlabel(r' log M$_{\textrm{group}}$ [M$_{\odot}$]', fontsize=25)
+
+        #plt.xaxis('A')
+        plt.show()
+
+        # Save the output
+        fname = f'./plots/Joy_plot_group{group_size_joy}.png'
+        plt.savefig(fname)
+        print(f"Saved plot to {fname}")
+       
+    elif how_many_groups == 2:
+        print('Insert')
+    
+    elif len(group_size_for_joy_plot) == 3:
+
+        print('Selected are 3 group sizes')
+        f, axes = plt.subplots(11,3, figsize=(16,10))
+        first_column = [axes[i][0] for i in range(11)]
+        second_column = [axes[i][1] for i in range(11)]
+        third_column = [axes[i][2] for i in range(11)]
+
+        #print('First groups is group of size:', group_size_joy[0])
+        #print(dataframe)
+        #print(dataframe[dataframe['GroupSize'] == group_size_joy[0]])
+        joypy.joyplot(dataframe[dataframe['GroupSize'] == group_size_for_joy_plot[0]], column=['GroupHIMass', 'GroupStellarMass'], by="RoundedPercent", ylim='own', figsize=(14,10),hist=False, bins=50, overlap=1, 
+                                  color=['#e0ecf4', '#fff7bc'], ax=first_column)
+        joypy.joyplot(dataframe[dataframe['GroupSize'] == group_size_for_joy_plot[1]], column=['GroupHIMass', 'GroupStellarMass'], by="RoundedPercent", ylim='own', figsize=(14,10),hist=False, bins=50, overlap=1, 
+                                  color=['#9ebcda', '#fec44f'], ax=second_column)
+        joypy.joyplot(dataframe[dataframe['GroupSize'] == group_size_for_joy_plot[2]], column=['GroupHIMass', 'GroupStellarMass'], by="RoundedPercent", ylim='own', figsize=(14,10),hist=False, bins=50, overlap=1, 
+                                  color=['#8c96c6', '#fe9929'], ax=third_column)
+
+        axes[0][0].text(9.5, 1.4, "Groups of {0}".format(group_size_for_joy_plot[0]), color="k", fontsize=20)
+        axes[0][1].text(10.4, 1.8, "Groups of {0}".format(group_size_for_joy_plot[1]), color="k", fontsize=20)
+        axes[0][2].text(10.5, 1.7, "Groups of {0}".format(group_size_for_joy_plot[2]), color="k", fontsize=20)
+
+        axes[0][0].text(6.5, -2, r'\% of HI in central (rounded)', rotation = 90, fontsize=20)
+
+        #plt.title(r'\% of HI in central (rounded) vs. Group Mass', fontsize=22)
+
+        plt.xlabel(r' log M$_{\textrm{group}}$ [M$_{\odot}$]', fontsize=25)
+
+        plt.show()
+        plt.tight_layout()
+        # Save the output
+        fname = f'./plots/Joy_plot_groups_of_size_{group_size_for_joy_plot[0]}_{group_size_for_joy_plot[1]}_{group_size_for_joy_plot[2]}.png'
+        plt.savefig(fname)
+        print(f"Saved plot to {fname}")
+       
+
+    else:
+        print("Wrong group number. Either add it to the function or change it.")
+
+    return
+
+
+    #########################################################################################################
+    ########################################### Handle the functions ########################################
+    #########################################################################################################
+    
 if __name__ == "__main__":
 
     outdir = '/fred/oz042/rdzudzar/python/plots/' # where the plots will be saved
     if not os.path.exists(outdir): os.makedirs(outdir)
 
     Mass_cutoff = 0.06424
-    number_of_files = 5
+    number_of_files = 15
     h = 0.73
     group_size_for_two_sided = 2
     
-        
-    
-    
+    # Name of the colormaps and group size used fot the joy plot.
+    cmap_one = cut_colormap(plt.cm.viridis_r, 0.25, 1)      
+    cmap_two = cut_colormap(plt.cm.plasma_r, 0.25, 1)
+    group_size_for_joy_plot = np.array([3, 4, 5])
+    how_many_groups = 3    
+
     indir = '/fred/oz042/rdzudzar/simulation_catalogs/darksage/millennium_latest/output/' # directory where the Dark Sage data are
 
     NpartMed = 100 # minimum number of particles for finding relevant medians for minima on plots
@@ -1333,7 +1588,7 @@ if __name__ == "__main__":
 
 
     ########################################################################################################
-    ########################################### Make all the plots #########################################
+    ########################################### Make all plots #############################################
     ########################################################################################################
     
 	#plot_len_max(G)
@@ -1361,8 +1616,15 @@ if __name__ == "__main__":
     c_ind, s_ind, g_ind = group_indices_for_percentage(updated_dict)
     
     # Compute group masses (HI and stellar) 
-    g_m, g_st, percentage = compute_group_properties(c_ind, s_ind, g_ind)
+    g_m, g_st, percentage, BTT_cen, Mvir_cen, Rvir_cen, group_length = compute_group_properties(c_ind, s_ind, g_ind)
     
     plot_per_cent_of_HI_in_central(g_m, g_st, percentage)
 
+    df_pairplot = make_dataframe_for_pairplot(g_st, g_m, percentage, group_length, BTT_cen, Mvir_cen, Rvir_cen)
 
+    make_pair_plot(df_pairplot)
+
+    df_joy = make_dataframe_for_joyplot(df_pairplot)
+       
+  
+    make_joy_plot(df_joy, group_size_for_joy_plot, how_many_groups, cmap_one, cmap_two) 
