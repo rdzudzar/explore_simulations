@@ -20,6 +20,8 @@ import math
 from numba import jit
 import pandas as pd
 import seaborn as sns
+from itertools import chain
+
 # joypy
 import joypy
 from matplotlib import cm
@@ -1539,6 +1541,114 @@ def make_joy_plot(dataframe, group_size_joy, how_many_groups, colormap_one, colo
     return
 
 
+def find_groups_gas_rich_central(define_percent_limit):
+    # Find which items in a percentage list have central of HI percentage above the defined limit
+    index_limit = []
+    for idx, large_percentage in enumerate(percentage):
+        if large_percentage > define_percent_limit:
+            index_limit.append(idx)
+    
+    # For found items, find what are galaxy(halo) indices of those and save them
+    # This way I get the indices of a halo where central has HI percentage above the defined limit
+    g_ind_limit = []
+    for idx, cen in enumerate(g_ind):
+        for each_index in index_limit:
+            if idx == each_index:
+                g_ind_limit.append(cen)
+                
+    c_ind_limit = []
+    for idx, cen in enumerate(c_ind):
+        for each_index in index_limit:
+            if idx == each_index:
+                c_ind_limit.append(cen)
+    
+    s_ind_limit = []
+    for idx, sat in enumerate(s_ind):
+        for each_index in index_limit:
+            if idx == each_index:
+                s_ind_limit.append(sat)
+    
+    print(index_limit[0:10])
+    print(c_ind_limit[0:10])
+    print(g_ind_limit[0:10])
+    print(s_ind_limit[0:10])
+    return g_ind_limit, c_ind_limit, index_limit, s_ind_limit
+
+def compute_groups_gas_rich_central(g_ind_limit, c_ind_limit, s_ind_limit):
+    # Compute central galaxies
+    central_mass = np.sum(G['DiscHI'],axis=1)[c_ind_limit]*1e10/h
+    central_st_mass = G['StellarMass'][c_ind_limit]*1e10/h
+    
+    # Compute group properties 
+    g_m = []
+    g_st = []
+    p = []
+    sat_m = []
+    sat_sm = []
+    #@jit
+    #def compute_group_properties():
+    for i in tqdm(g_ind_limit):
+        g_mass = np.sum(G['DiscHI'],axis=1)[i]*1e10/h
+        g_st_mass = G['StellarMass'][i]*1e10/h
+        
+        g_m.append(np.sum(g_mass, axis=0))
+        g_st.append(np.sum(g_st_mass, axis=0))
+    
+    for i in s_ind_limit:
+        g_mass_sat = np.sum(G['DiscHI'],axis=1)[i]*1e10/h
+        g_st_mass_sat = G['StellarMass'][i]*1e10/h
+        sat_m.append(g_mass_sat)
+        sat_sm.append(g_st_mass_sat)
+       
+    perc = (central_mass.ravel()/g_m)*100
+    p.append(perc)
+
+    chain2 = itertools.chain(*sat_m)
+    chain1 = itertools.chain(*sat_sm)
+    st_sat = np.log10(list(chain1))
+    hi_sat = np.log10(list(chain2))
+
+
+    return g_m, g_st, p, hi_sat, st_sat, central_mass, central_st_mass
+
+
+
+def plot_limit_gas_rich_central(central_st_mass, central_mass, st_sat, hi_sat):
+
+    fig = plt.figure(figsize=(13,10))                                                               
+    ax = fig.add_subplot(1,1,1)
+
+    cm = plt.cm.get_cmap('YlGnBu')
+
+
+    im = plt.scatter(np.log10(central_st_mass).ravel(), np.log10(central_mass).ravel(), s=120, alpha=0.8,  c=p[0].ravel(), cmap=cm, #color = 'white', edgecolor='#2c7fb8', 
+                           linewidth=2, label=r'Rich centrals')
+    cbar = fig.colorbar(im, ax=ax, orientation='vertical', label=r'\% of the M$_{\mathrm{HI}}$ in central', pad=0.01)
+    cbar.ax.tick_params(labelsize=20, size=28) 
+
+    im = plt.scatter(st_sat, hi_sat, s=120, alpha = 0.8,
+                            color='lightgrey', edgecolor='k', label=r'Their satellites', zorder=-2)
+
+    ax.tick_params(axis='both', which='major', labelsize=18)
+    ax.tick_params(axis='both', which='minor', labelsize=18)
+
+    ax.set_xlabel(r'log M$_{\star}$ [M$_{\odot}$]', fontsize=25)
+    ax.set_ylabel(r'log M$_{\textrm{HI}}$ [M$_{\odot}$]',fontsize=25)
+    ax.legend(loc=3)
+    leg = ax.get_legend()
+    #leg.legendHandles[0].set_color('k')
+    #plt.ylim(7,11.2)
+    plt.tight_layout()
+    plt.savefig('./plots/Limit_rich_centrals_and_satellites.png')
+
+
+
+
+
+
+
+
+
     #########################################################################################################
     ########################################### Handle the functions ########################################
     #########################################################################################################
@@ -1558,6 +1668,9 @@ if __name__ == "__main__":
     cmap_two = cut_colormap(plt.cm.plasma_r, 0.25, 1)
     group_size_for_joy_plot = np.array([3, 4, 5])
     how_many_groups = 3    
+
+    define_percent_limit = 80
+
 
     indir = '/fred/oz042/rdzudzar/simulation_catalogs/darksage/millennium_latest/output/' # directory where the Dark Sage data are
 
@@ -1591,14 +1704,14 @@ if __name__ == "__main__":
     ########################################### Make all plots #############################################
     ########################################################################################################
     
-	#plot_len_max(G)
-	#plot_single_galaxies(G, single_gal_ind)	
-	#plot_group_numbers_and_sizes(updated_dict)
-	#plot_mhi_vs_ms_3x3(updated_dict)
+    #plot_len_max(G)
+    #plot_single_galaxies(G, single_gal_ind)	
+    #plot_group_numbers_and_sizes(updated_dict)
+    #plot_mhi_vs_ms_3x3(updated_dict)
 
-	#two_sided_histogram_group_and_single(updated_dict, group_size_for_two_sided)
+    #two_sided_histogram_group_and_single(updated_dict, group_size_for_two_sided)
     #two_sided_histogram_groups(updated_dict, group_size_for_two_sided)
-	#hist_Mhi_vs_Mstar_each_group(updated_dict)
+    #hist_Mhi_vs_Mstar_each_group(updated_dict)
  
 
     #find_richer_central_for_Nsized_group(grp_length)
@@ -1626,5 +1739,13 @@ if __name__ == "__main__":
 
     df_joy = make_dataframe_for_joyplot(df_pairplot)
        
-  
+    # This will break if there are no galaxies/groups of certain type, or go up to 100% 
+
     make_joy_plot(df_joy, group_size_for_joy_plot, how_many_groups, cmap_one, cmap_two) 
+
+    # For the Limit gas-rich centrals and their satellites
+    limit_group, limit_central, limit_index, s_ind_limit = find_groups_gas_rich_central(define_percent_limit)
+    g, s, p, sat_m, sat_sm, central_mass, central_st_mass = compute_groups_gas_rich_central(limit_group, limit_central, s_ind_limit)
+    plot_limit_gas_rich_central(central_st_mass, central_mass, sat_sm, sat_m)
+
+
