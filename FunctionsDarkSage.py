@@ -1370,9 +1370,11 @@ def make_dataframe_for_joyplot(dataframe):
     Make a dataframe with the RoundedPercentage - which is used only fot the joyplots.
 
     Parameters:
+    ===========
     dataframe = Dataframe, as obtained from the pairplot.
 
     Returns:
+    ========
     df_joy - Dataframe. Used for making Joy plots with RoundedPercent as y-axis.
 
     """
@@ -1719,14 +1721,60 @@ def plot_limit_HI_in_central(limit_low, limit_high, central_st_mass, central_mas
     #leg.legendHandles[0].set_color('k')
     plt.xlim(8.7,12.2)
     plt.ylim(4, 11.1)
-    plt.tight_layout()
+    #plt.tight_layout()
     #plt.savefig('./plots/Limit_rich_centrals_and_satellites.png')
 
      # Save the output
-    fname = f'./plots/Limit_{limit_low}_and_{limit_high}_rich_centrals_and_satellites.png'
+    fname = f'./plots/Limit_{limit_low}_and_{limit_high}_rich_centrals_and_satellites.pdf'
     plt.savefig(fname)
     print(f"Saved plot to {fname}")
    
+
+def plot_limit_seaborn_HI_in_central_groups(limit_low, limit_high, df_pairplot):
+    
+    fig = plt.figure(figsize=(10,10))                                                               
+    ax = fig.add_subplot(1,1,1)
+
+    #sns.set_style("white")
+    #sns.set(font_scale=2)
+    #sns.set_style("ticks", {"xtick.major.size":10, "ytick.major.size":10,
+    #                        "xtick.minor.size":6,"ytick.minor.size":6})
+    #sns.set_style({"xtick.direction": "in","ytick.direction": "in"})
+    #sns.set_style=("ticks", {"xtick.major.size":10, "ytick.major.size":10, "xtick.minor.size":6,"ytick.minor.size":6, "lines.linewidth": 2})
+    sns.set_style=("ticks", {"xtick.major.size":10, "ytick.major.size":10, "xtick.minor.size":6,"ytick.minor.size":6, "lines.linewidth": 2})    
+
+#matplotlib.rcParams.update({'font.size': fsize, 'xtick.major.size': 10, 'ytick.major.size': 10, 'xtick.major.width': 1, 'ytick.major.width': 1, 'ytick.minor.size': 5, 'xtick.minor.size': 5, 'xtick.direction': 'in', 'ytick.direction': 'in', 'axes.linewidth': 1, 'text.usetex': True, 'font.family': 'serif', 'font.serif': 'Times New Roman', 'legend.numpoints': 1, 'legend.columnspacing': 1, 'legend.fontsize': fsize-4, 'xtick.top': True, 'ytick.right': True})
+
+    
+    #sns.set_style("white")
+    sns.kdeplot((df_pairplot['GroupStellarMass'][ (df_pairplot['Percent'] >= limit_low) & (df_pairplot["Percent"] < limit_high)  ]), 
+                (df_pairplot['GroupHIMass'][ (df_pairplot['Percent'] >= limit_low) & (df_pairplot["Percent"] < limit_high) ]), cmap='RdPu_r', label= '[{0} -- {1}]\%  of HI is in Central'.format(limit_low, limit_high)) #shade=True, shade_lowest=False, 
+
+
+    sns.kdeplot((df_pairplot['GroupStellarMass'][ (df_pairplot['Percent'] >= 0) & (df_pairplot['Percent'] <= 10) ]),
+                (df_pairplot['GroupHIMass'][ (df_pairplot['Percent'] >= 0) & (df_pairplot['Percent'] <= 10) ]), shade=True,shade_lowest=False, alpha= 0.7, cmap='Greys', label= '[0 -- 10]\% of HI is in Central')
+
+
+    ax.set_xlabel(r'log M$_{\star\textrm{group}}$ [M$_{\odot}$]', fontsize=25)
+    ax.set_ylabel(r'log M$_{\textrm{HI}\textrm{group}}$ [M$_{\odot}$]',fontsize=25)
+    ax.yaxis.set_ticks_position('both')
+    ax.xaxis.set_ticks_position('both')
+
+    plt.legend(loc=3)
+    leg = ax.get_legend()
+    leg.legendHandles[0].set_color('plum')
+    leg.legendHandles[1].set_color('grey')
+    #leg.legendHandles[2].set_color('plum')
+    plt.ylim(8.5,11.2)
+    plt.xlim(8.7, 12.4)
+    # plt.show()
+   
+    # Save the output
+    fname = f'./plots/Contour_{limit_low}_and_{limit_high}_groups.png'
+    fig.savefig(fname)
+    print(f"Saved plot to {fname}")
+  
+    return
 
 
 
@@ -1741,14 +1789,14 @@ if __name__ == "__main__":
     if not os.path.exists(outdir): os.makedirs(outdir)
 
     Mass_cutoff = 0.06424
-    number_of_files = 15
+    number_of_files = 250
     h = 0.73
     group_size_for_two_sided = 2
     
     # Name of the colormaps and group size used fot the joy plot.
     cmap_one = cut_colormap(plt.cm.viridis_r, 0.25, 1)      
     cmap_two = cut_colormap(plt.cm.plasma_r, 0.25, 1)
-    group_size_for_joy_plot = np.array([3, 4, 5])
+    group_size_for_joy_plot = np.array([4, 6, 8])
     how_many_groups = 3    
 
     indir = '/fred/oz042/rdzudzar/simulation_catalogs/darksage/millennium_latest/output/' # directory where the Dark Sage data are
@@ -1783,26 +1831,26 @@ if __name__ == "__main__":
     ########################################### Make all plots #############################################
     ########################################################################################################
     
-    #plot_len_max(G)
-    #plot_single_galaxies(G, single_gal_ind)	
-    #plot_group_numbers_and_sizes(updated_dict)
-    #plot_mhi_vs_ms_3x3(updated_dict)
+    plot_len_max(G)
+    plot_single_galaxies(G, single_gal_ind)	
+    plot_group_numbers_and_sizes(updated_dict)
+    plot_mhi_vs_ms_3x3(updated_dict)
 
-    #two_sided_histogram_group_and_single(updated_dict, group_size_for_two_sided)
-    #two_sided_histogram_groups(updated_dict, group_size_for_two_sided)
-    #hist_Mhi_vs_Mstar_each_group(updated_dict)
+    two_sided_histogram_group_and_single(updated_dict, group_size_for_two_sided)
+    two_sided_histogram_groups(updated_dict, group_size_for_two_sided)
+    hist_Mhi_vs_Mstar_each_group(updated_dict)
  
 
-    #find_richer_central_for_Nsized_group(grp_length)
+    find_richer_central_for_Nsized_group(grp_length)
 
     #Centrals more HI rich than the sum of their satellites
-    #two_sided_histogram_rich(richer_central_s_m, richer_central_hi_m, poorer_central_s_m, poorer_central_hi_m) 
+    two_sided_histogram_rich(richer_central_s_m, richer_central_hi_m, poorer_central_s_m, poorer_central_hi_m) 
    
 
     #Central gals which are more HI rich than the sum of their satellites --- also marks position of their satellites
     # And vice versa
-    #two_sided_histogram_rich_groups(grp_length, richer_central_s_m.ravel(), richer_central_hi_m.ravel(), poorer_central_s_m.ravel(), poorer_central_hi_m.ravel(),
-    #                            richer_sat_s_m.ravel(), richer_sat_hi_m.ravel(), poorer_sat_s_m.ravel(), poorer_sat_hi_m.ravel())
+    two_sided_histogram_rich_groups(grp_length, richer_central_s_m.ravel(), richer_central_hi_m.ravel(), poorer_central_s_m.ravel(), poorer_central_hi_m.ravel(),
+                                richer_sat_s_m.ravel(), richer_sat_hi_m.ravel(), poorer_sat_s_m.ravel(), poorer_sat_hi_m.ravel())
     
     # Group indices
     c_ind, s_ind, g_ind = group_indices_for_percentage(updated_dict)
@@ -1814,16 +1862,17 @@ if __name__ == "__main__":
 
     df_pairplot = make_dataframe_for_pairplot(g_st, g_m, percentage, group_length, BTT_cen, Mvir_cen, Rvir_cen)
 
-    #make_pair_plot(df_pairplot)
+    make_pair_plot(df_pairplot)
 
     df_joy = make_dataframe_for_joyplot(df_pairplot)
        
-    # This will break if there are no galaxies/groups of certain type, or go up to 100% 
-
-    #make_joy_plot(df_joy, group_size_for_joy_plot, how_many_groups, cmap_one, cmap_two) 
+    # Making joypy plot will break if there are no galaxies/groups of certain type, or go up to 100% 
+    make_joy_plot(df_joy, group_size_for_joy_plot, how_many_groups, cmap_one, cmap_two) 
 
     # For the Limit of HI in centrala find distribution of the central galaxies and theirr satellites 
     # Make a loop to get more values
+    # I then use """ convert -delay 30 Limit*.png Animated_Limit.gif """ to save the plots as gif with the (module load imagemagick/7.0.8-11)
+
     Limit_ranges = ([0, 10], [10, 20], [20, 30], [30, 40], [40, 50], [50, 60], [60, 70], [70, 80], [80, 90], [90, 100])
 
     for i in Limit_ranges:
@@ -1833,5 +1882,9 @@ if __name__ == "__main__":
         limit_low, limit_high, limit_group, limit_central, limit_index, s_ind_limit = find_groups_HI_in_central(define_percent_low, define_percent_limit)
         g, s, p, sat_m, sat_sm, central_mass, central_st_mass = compute_groups_HI_in_central(limit_group, limit_central, s_ind_limit)
         plot_limit_HI_in_central(limit_low, limit_high, central_st_mass, central_mass, sat_sm, sat_m)
+
+        # Make SEBORN histograms:
+        plot_limit_seaborn_HI_in_central_groups(limit_low, limit_high, df_pairplot)
+    
 
 
