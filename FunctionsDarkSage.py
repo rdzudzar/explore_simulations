@@ -22,6 +22,7 @@ import pandas as pd
 import seaborn as sns
 from itertools import chain
 
+from scientific_colourmaps import *
 # joypy
 import joypy
 from matplotlib import cm
@@ -1227,7 +1228,7 @@ def group_indices_for_percentage(updated_dict):
     s_ind = []
     g_ind = []
 
-    for i in trange(3,21,1): #starting grom galaxy pairs
+    for i in trange(3,41,1): #starting grom galaxy pairs
         for group_key in updated_dict[i]["Groups"].keys():
             central_idx = updated_dict[i]["Groups"][group_key]["Centrals"] #give indices
             c_ind.append(central_idx)
@@ -1335,6 +1336,9 @@ def plot_per_cent_of_HI_in_central(g_m, g_st, percentage):
     plt.savefig('./plots/Percent_HIinCentral.png')
     return 
 
+
+
+
 def make_dataframe_for_pairplot(g_st, g_m, percentage, group_length, BTT_cen, Mvir_cen, Rvir_cen):
     """
     Create a pandas dataframe.
@@ -1365,6 +1369,50 @@ def make_dataframe_for_pairplot(g_st, g_m, percentage, group_length, BTT_cen, Mv
    
     return df_pair
 
+
+def plot_HI_in_central_per_group(N_sized_groups, df_percent):
+    """
+    Make a % of the HI in central galaxies, for fixed group member size. 
+    
+    Parameters:
+    ==========
+    N_sized_groups: List of integers. Group size in numbers.
+    df_pair: Dataframe. Containing group parameters. Defined in make_dataframe_for_pairplot.   
+
+    Return:
+    =======
+    Sves multiple plots.
+    """
+
+
+    for size in N_sized_groups:
+            
+        fig = plt.figure(figsize=(10,7))                                                               
+        ax = fig.add_subplot(1,1,1)
+        
+        cm = plt.cm.viridis_r
+        
+        im = plt.scatter((df_percent['GroupStellarMass'][df_percent['GroupSize']==size]), (df_percent['GroupHIMass'][df_percent['GroupSize']==size]), s=100,
+                                c=df_percent['Percent'][df_percent['GroupSize']==size], edgecolor='k', cmap=cm, label=r'Groups with {0} members'.format(size))
+        
+        fig.colorbar(im, ax=ax, orientation='vertical', label=r'\% of the M$_{\mathrm{HI}}$ in central',
+                    pad=0.01)
+        
+        ax.set_xlabel(r'log M$_{\star}$ [M$_{\odot}$]', fontsize=25)
+        ax.set_ylabel(r'log M$_{\textrm{HI}}$ [M$_{\odot}$]',fontsize=25)
+        ax.legend(loc=2)
+        leg = ax.get_legend()
+        leg.legendHandles[0].set_color('k')
+        
+        
+        plt.savefig('./plots/Groups{0}_HIinCentral.png'.format(size))
+    return
+
+
+
+
+
+
 def make_dataframe_for_joyplot(dataframe):
     """
     Make a dataframe with the RoundedPercentage - which is used only fot the joyplots.
@@ -1379,11 +1427,22 @@ def make_dataframe_for_joyplot(dataframe):
 
     """
 
+    #def roundup(x):
+    #    """
+    #    Round up number as ceil of 10. Used for dounded percentage values needed for joyplot.
+    #    """
+    #    return int(math.ceil(x / 10.0)) * 10 # Add whether it will be by increment of 5 or 10 or something third
+
     def roundup(x):
         """
         Round up number as ceil of 10. Used for dounded percentage values needed for joyplot.
         """
-        return int(math.ceil(x / 10.0)) * 10 # Add whether it will be by increment of 5 or 10 or something third
+       
+        try:
+            return  int(math.ceil(x / 10.0)) * 10 # Add whether it will be by increment of 5 or 10 or something third
+        except ValueError:
+            return -1 # Return -1 in case there are NaN values
+
 
     rounded_per = []
     for i in dataframe['Percent']:
@@ -1416,7 +1475,7 @@ def make_pair_plot(dataframe):
     Saves Plot.
 
     """
-    fig = plt.figure(figsize=(13,13)) 
+    fig = plt.figure(figsize=(10,10)) 
     ax = fig.add_subplot(1,1,1)
     
 
@@ -1600,10 +1659,10 @@ def find_groups_HI_in_central(define_percent_low, define_percent_limit):
             if idx == each_index:
                 s_ind_limit.append(sat)
     
-    print(index_limit[0:10])
-    print(c_ind_limit[0:10])
-    print(g_ind_limit[0:10])
-    print(s_ind_limit[0:10])
+    #print(index_limit[0:10])
+    #print(c_ind_limit[0:10])
+    #print(g_ind_limit[0:10])
+    #print(s_ind_limit[0:10])
     return define_percent_low, define_percent_limit, g_ind_limit, c_ind_limit, index_limit, s_ind_limit
 
 def compute_groups_HI_in_central(g_ind_limit, c_ind_limit, s_ind_limit):
@@ -1725,7 +1784,7 @@ def plot_limit_HI_in_central(limit_low, limit_high, central_st_mass, central_mas
     #plt.savefig('./plots/Limit_rich_centrals_and_satellites.png')
 
      # Save the output
-    fname = f'./plots/Limit_{limit_low}_and_{limit_high}_rich_centrals_and_satellites.pdf'
+    fname = f'./plots/Limit_{limit_low}_and_{limit_high}_rich_centrals_and_satellites.png'
     plt.savefig(fname)
     print(f"Saved plot to {fname}")
    
@@ -1776,6 +1835,278 @@ def plot_limit_seaborn_HI_in_central_groups(limit_low, limit_high, df_pairplot):
   
     return
 
+def chain_plot_one_sample(df_percent, High_percentage):
+    """
+  
+    Make a chain distribution plot to see 1/2 sigma of the dataset. Dataset is above High_percentage.
+
+    Parameters:
+    ==========
+    df_pair: DataFrame with the group properties.
+    High_percentage: Integer/Float. Lower limit for HI rich dataset.
+   
+
+    Return:
+    =======
+    Saves plot obtained with chainconsumer.
+
+    """
+    import pylab
+    from chainconsumer import ChainConsumer
+
+    x, y = (df_percent['GroupStellarMass'][df_percent['Percent'] >= High_percentage]), (df_percent['GroupHIMass'][df_percent['Percent'] >= High_percentage])
+
+    parameters = ["$\mathrm{log}$ $\mathrm{M}_{\star}$", "$\mathrm{log}$ $\mathrm{M}_{\mathrm{HI}}$"]
+    c = ChainConsumer().add_chain([x, y], parameters=parameters, name='Over {0}\% of HI is in Central'.format(High_percentage))
+
+    #properties at: https://samreay.github.io/ChainConsumer/chain_api.html
+    # The default case, so you don't need to specify: sigma2d gives  levels for 1D Gaussians - ie confidence levels of 68% and 95%.
+    #if sigma2d True : onfidence levels for 2D Gaussians, where 1 and 2 σ represents 39% and 86% confidence levels respectively
+
+    c.configure(statistics='max', flip=False, sigma2d=False, diagonal_tick_labels=False,  linewidths=2, linestyles=['-'],
+                label_font_size=20, tick_font_size=15, contour_labels='sigma', contour_label_font_size=20, shade_alpha=1, colors='#c994c7', spacing=0)   # max_ticks=4 ; smooth=0
+
+    fig = c.plotter.plot()
+    fig.set_size_inches(5.5 + fig.get_size_inches())  # Resize fig for doco. You don't need this.
+    # plt.show()
+    # Save the output
+    fname = f'./plots/Chainconsumer_above_{High_percentage}_groups.png'
+    fig.savefig(fname)
+    print(f"Saved plot to {fname}")
+  
+    return
+
+
+
+def chain_plot_two_samples(df_percent, High_percentage, Low_percentage):
+    """
+    Make a chain distribution plot to see 1/2 sigma of the two datasets. One dataset is below Low_percentage; the other dataset is above High_percentage.
+
+    Parameters:
+    ==========
+    df_pair: DataFrame with the group properties.
+    High_percentage: Integer/Float. Lower limit for HI rich dataset.
+    Low_percentage: Integer/Float. Upper limit for HI poor dataset.
+
+    Return:
+    =======
+    Saves plot obtained with chainconsumer.
+
+    """
+    import pylab
+    from chainconsumer import ChainConsumer
+ 
+    x1, y1 = (df_percent['GroupStellarMass'][df_percent['Percent'] >= High_percentage]), (df_percent['GroupHIMass'][df_percent['Percent'] >= High_percentage])
+    x2, y2 = (df_percent['GroupStellarMass'][df_percent['Percent'] < Low_percentage]), (df_percent['GroupHIMass'][df_percent['Percent'] < Low_percentage])
+
+    parameters = ["$\mathrm{log}$ $\mathrm{M}_{\star}$", "$\mathrm{log}$ $\mathrm{M}_{\mathrm{HI}}$"]
+
+    c = ChainConsumer()
+    c.add_chain([x1, y1], parameters=parameters, name='Over {0}\% of HI is in Central'.format(High_percentage))
+    c.add_chain([x2, y2], parameters=parameters, name='Less than {0}\% of HI is in Central'.format(Low_percentage))
+
+
+    #Change sigmas to only 1 and it will show only 95%
+    c.configure(statistics='max', linestyles=["-", "--"], linewidths=[1.0, 1.0],  sigma2d=False, sigmas=[1,2], diagonal_tick_labels=False,
+                legend_kwargs={"loc": "upper left", "fontsize": 15},
+                legend_color_text=False, legend_location=(0, 0),
+               label_font_size=25, tick_font_size=15, contour_label_font_size=20) #colors=['#2b8cbe', '#f4a582'],
+
+    fig = c.plotter.plot(figsize=1.5)
+    fig.set_size_inches(4.5 + fig.get_size_inches())  # Resize fig for doco. You don't need this.  
+
+
+    # Save the output
+    fname = f'./plots/Chainconsumer_{Low_percentage}_and_{High_percentage}_groups.png'
+    fig.savefig(fname)
+    print(f"Saved plot to {fname}")
+  
+    return
+
+
+def BTT_ratio_NxN_plot(groups_dict):
+    """
+    Make 3x3 plot (HI mass vs Stellar mass) with galaxy groups based on the number of galaxies in a group and separate in each group central
+    and satellite galaxy. Place the BTT ratio on the colourpar.
+    
+    Parameters
+    ==========
+    groups_dict: Dictionary. Keyed by the group size. Use: ``groups_dict[group_size]["Centrals"]``
+                 Extracts groups with size N and the satellite & central galaxies
+                 Created dictionary from (def create_cen_sat_from_groups_dict)
+  
+    Returns
+    =======
+    3x3 Figure with M_HI versus M_* and their BTT ratio
+    
+    Usage
+    =====
+    To use type: ``mhi_vs_ms_3x3(updated_dict) ``
+                 Where updated_dict is the dictionary that is parsed to plotting function
+                 ``updated_dict = create_cen_sat_from_groups_dict(groups, store_cen_indices)``
+    
+    """
+    
+    
+    fig, ax = plt.subplots(nrows=4, ncols=5, sharex='col', sharey='row', figsize=(18, 15))
+    
+    #ax[0][0].plot(np.log10(Mstellar_single_gal), np.log10(Mcoldgas_single_gal), 'o', color='lightgrey',markersize=8, label='Single galaxies')
+    
+    cm = berlin_map
+   
+    single = groups_dict[1]['Centrals']
+    BTT_single = (G['InstabilityBulgeMass'][single]*1e10/h + G['MergerBulgeMass'][single]*1e10/h) / ( G['StellarMass'][single]*1e10/h )
+    BTT = (G['InstabilityBulgeMass'] + G['MergerBulgeMass']) / ( G['StellarMass'] ) # Find bulge to total ratio
+
+    ax[0][0].scatter(np.log10(G['StellarMass'][single]*1e10/h), 
+                     np.log10(np.sum(G['DiscHI'],axis=1)[single]*1e10/h), 
+                     c = BTT_single, s=80, edgecolor='k', cmap=cm)
+    
+    # Put plot in row and columns:3by3 are 00, 01, 02, 10, 11, 12, 20, 21, 22 
+    row_count = 0
+    for size in trange(1, 20, 1): #I'm planning to have 1-9 sized groups. Made to form trange(1, 9, 1) as 3x3 pannels 
+            
+        if size % 5 == 0:
+            row_count += 1
+        this_ax = ax[row_count, size%5] #Axis. Created for plotting 3x3 plots
+        
+        group_size = size+1 # Select number of galaxies per group --- adding +1 because it is counting from 0.
+    
+        central_gals = groups_dict[group_size]["Centrals"]  #List of integers. Contains indices of central galaxies.  List is obtained through the dictionary. 
+        sat_gals = groups_dict[group_size]["Satellites"] #List of integers. Contains indices of satellite galaxies. List is obtained through the dictionary.
+        
+        BTT_central = groups_dict[group_size]["Centrals"]
+        BTT_satellite = groups_dict[group_size]["Satellites"]
+        
+        # Plot single galaxies           
+        #this_ax.plot(np.log10(Mstellar_single_gal), np.log10(Mcoldgas_single_gal), 'o', color='lightgrey',markersize=8)
+        
+            
+        # Do plotting of groups of N-length; it will be placed on each subplot + +.
+        # Centrals
+        
+        #im = plt.scatter(np.log10(df_percent['StellarM']+1), np.log10(df_percent['HImass']*1e10/h+1), s=80*df_percent['GroupSize'],
+        #                c=df_percent['BTT_central'], edgecolor='k', cmap=cm, label=r'Groups ($N\geq3$) properties')
+        
+        cm = berlin_map
+        this_ax.scatter(np.log10(G['StellarMass'][central_gals]*1e10/h), 
+                         np.log10(np.sum(G['DiscHI'],axis=1)[central_gals]*1e10/h), 
+                     c = BTT[BTT_central], s=80, edgecolor='k', cmap=cm)    
+                     
+        # Satellites
+        im = this_ax.scatter(np.log10(G['StellarMass'][sat_gals]*1e10/h), 
+                         np.log10(np.sum(G['DiscHI'],axis=1)[sat_gals]*1e10/h), 
+                         c = BTT[BTT_satellite], s=80, cmap=cm)
+    
+        # Add label for each sub-plot to know the group size and what is central/satellite
+        this_ax.plot([], [], 'o', color='white', label='Groups of %.f' %group_size)
+
+        #Add legend    
+        leg = this_ax.legend(loc=4,frameon=True,fancybox=True, framealpha=0.6, fontsize=16)
+        
+    # Add x and y axis labels only on the plot edges since there will be no space between panels
+    for row in range(4):
+        this_ax = ax[row,0]
+        this_ax.set_ylabel(r'log M$_{\textrm{HI}}$ [M$_{\odot}$]',fontsize=25)
+    for col in range(5):
+        this_ax = ax[3,col]
+        this_ax.set_xlabel(r'log M$_{\star}$ [M$_{\odot}$]', fontsize=25)
+    # Tight layout and remove spacing between subplots
+    plt.tight_layout()
+    # My first plot is only single galaxies so I add legend separately
+    
+    # COLORBAR INSIDE SUBPLOT
+    #from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+    #cbaxes = inset_axes(ax[0][0], width="5%", height="50%", loc='center right') #loc=l, bbox_to_anchor=(0.6,0.5)
+    #plt.colorbar(im, cax=cbaxes, ticks=[0.,0.5,1], orientation='vertical')
+    #cbaxes.yaxis.set_ticks_position('left')
+    
+    ax[0][0].plot([], [], 'o', color='grey', label='Single galaxies')
+    ax[0][0].plot([], [], 'o', color='k', markersize=8, label='Satellite')
+    ax[0][0].plot([], [], 'o', color='white', markeredgecolor='k', markersize=8, markeredgewidth=2, label='Central')
+    ax[0][0].legend(loc=4,frameon=True,fancybox=True, framealpha=0.6, fontsize=16)
+
+    plt.subplots_adjust(wspace = 0.0, hspace = 0.0)
+
+    # COLORBAR for the entire plot
+    plt.colorbar(im, ax=ax[:, 4], pad=0.01, label=r'B/T ratio')
+    #plt.show()
+    #return fig
+    # Save the output
+    fname = f'./plots/BTT_NxN_groups.png'
+    fig.savefig(fname)
+    print(f"Saved plot to {fname}")
+    return
+
+def BTT_distribution(groups_dict):
+    
+    """
+    Make BTT distribution accros a number of groups.
+    
+    Parameters
+    ==========
+    groups_dict: Dictionary. Keyed by the group size. Use: ``groups_dict[group_size]["Centrals"]``
+                 Extracts groups with size N and the satellite & central galaxies
+                 Created dictionary from (def create_cen_sat_from_groups_dict)
+  
+    Returns
+    =======
+    Plot with BTT distribution
+    
+    Usage
+    =====
+    To use type: ``BTT_distribution(updated_dict) ``
+                 Where updated_dict is the dictionary that is parsed to plotting function
+                 ``updated_dict = create_cen_sat_from_groups_dict(groups, store_cen_indices)``
+    
+    """
+    BTT = (G['InstabilityBulgeMass'] + G['MergerBulgeMass']) / ( G['StellarMass'] ) # Find bulge to total ratio
+    
+    fig, ax = plt.subplots(figsize=(8,8))
+    
+    #ax[0][0].plot(np.log10(Mstellar_single_gal), np.log10(Mcoldgas_single_gal), 'o', color='lightgrey',markersize=8, label='Single galaxies')
+    
+    # Put plot in row and columns:3by3 are 00, 01, 02, 10, 11, 12, 20, 21, 22 
+    
+    BTT_c = []
+    BTT_s = []
+    
+    for size in trange(1, 20, 1): #I'm planning to have 1-9 sized groups. Made to form trange(1, 9, 1) as 3x3 pannels 
+    
+        group_size = size+1 # Select number of galaxies per group --- adding +1 because it is counting from 0.
+    
+        central_gals = groups_dict[group_size]["Centrals"]  #List of integers. Contains indices of central galaxies.  List is obtained through the dictionary. 
+        sat_gals = groups_dict[group_size]["Satellites"] #List of integers. Contains indices of satellite galaxies. List is obtained through the dictionary.
+        
+        BTT_central = groups_dict[group_size]["Centrals"]
+        BTT_satellite = groups_dict[group_size]["Satellites"]
+        
+        BTT_c.extend(BTT[BTT_central])
+        BTT_s.extend(BTT[BTT_satellite])
+    
+    binwidth=0.1
+    bins = np.arange(0, 1.1, binwidth)
+    plt.hist(BTT_s, bins=bins, color='#2c7fb8', edgecolor='k', linewidth=1, alpha=0.8, label='Satellite')
+    plt.hist(BTT_c, bins=bins, color='white', edgecolor='#2c7fb8', linewidth=4, alpha=0.6, label='Central')
+
+    
+    leg = ax.legend(loc=1,frameon=True,fancybox=True, framealpha=0.6, fontsize=16)
+    
+    ax.set_xlabel(r'B/T ratio',fontsize=25)
+    ax.set_ylabel(r'N$_{\textrm{galaxies}}$',fontsize=25)
+    
+    plt.tight_layout()
+
+    plt.subplots_adjust(wspace = 0.0, hspace = 0.0)
+    plt.xlim(-0.05,1.05)
+    #plt.show()
+    #return fig
+    fname = f'./plots/BTT_distribution.png'
+    fig.savefig(fname)
+    print(f"Saved plot to {fname}")
+  
+    return
+
 
 
 
@@ -1791,13 +2122,15 @@ if __name__ == "__main__":
     Mass_cutoff = 0.06424
     number_of_files = 250
     h = 0.73
-    group_size_for_two_sided = 2
+    group_size_for_two_sided = 4
     
     # Name of the colormaps and group size used fot the joy plot.
     cmap_one = cut_colormap(plt.cm.viridis_r, 0.25, 1)      
     cmap_two = cut_colormap(plt.cm.plasma_r, 0.25, 1)
     group_size_for_joy_plot = np.array([4, 6, 8])
     how_many_groups = 3    
+
+    N_sized_groups = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 
     indir = '/fred/oz042/rdzudzar/simulation_catalogs/darksage/millennium_latest/output/' # directory where the Dark Sage data are
 
@@ -1831,26 +2164,26 @@ if __name__ == "__main__":
     ########################################### Make all plots #############################################
     ########################################################################################################
     
-    plot_len_max(G)
-    plot_single_galaxies(G, single_gal_ind)	
-    plot_group_numbers_and_sizes(updated_dict)
-    plot_mhi_vs_ms_3x3(updated_dict)
+    #plot_len_max(G)
+    #plot_single_galaxies(G, single_gal_ind)	
+    #plot_group_numbers_and_sizes(updated_dict)
+    #plot_mhi_vs_ms_3x3(updated_dict)
 
-    two_sided_histogram_group_and_single(updated_dict, group_size_for_two_sided)
-    two_sided_histogram_groups(updated_dict, group_size_for_two_sided)
-    hist_Mhi_vs_Mstar_each_group(updated_dict)
+    #two_sided_histogram_group_and_single(updated_dict, group_size_for_two_sided)
+    #two_sided_histogram_groups(updated_dict, group_size_for_two_sided)
+    #hist_Mhi_vs_Mstar_each_group(updated_dict)
  
 
-    find_richer_central_for_Nsized_group(grp_length)
+    #find_richer_central_for_Nsized_group(grp_length)
 
     #Centrals more HI rich than the sum of their satellites
-    two_sided_histogram_rich(richer_central_s_m, richer_central_hi_m, poorer_central_s_m, poorer_central_hi_m) 
+    #two_sided_histogram_rich(richer_central_s_m, richer_central_hi_m, poorer_central_s_m, poorer_central_hi_m) 
    
 
     #Central gals which are more HI rich than the sum of their satellites --- also marks position of their satellites
     # And vice versa
-    two_sided_histogram_rich_groups(grp_length, richer_central_s_m.ravel(), richer_central_hi_m.ravel(), poorer_central_s_m.ravel(), poorer_central_hi_m.ravel(),
-                                richer_sat_s_m.ravel(), richer_sat_hi_m.ravel(), poorer_sat_s_m.ravel(), poorer_sat_hi_m.ravel())
+    #two_sided_histogram_rich_groups(grp_length, richer_central_s_m.ravel(), richer_central_hi_m.ravel(), poorer_central_s_m.ravel(), poorer_central_hi_m.ravel(),
+    #                            richer_sat_s_m.ravel(), richer_sat_hi_m.ravel(), poorer_sat_s_m.ravel(), poorer_sat_hi_m.ravel())
     
     # Group indices
     c_ind, s_ind, g_ind = group_indices_for_percentage(updated_dict)
@@ -1858,12 +2191,18 @@ if __name__ == "__main__":
     # Compute group masses (HI and stellar) 
     g_m, g_st, percentage, BTT_cen, Mvir_cen, Rvir_cen, group_length = compute_group_properties(c_ind, s_ind, g_ind)
     
-    plot_per_cent_of_HI_in_central(g_m, g_st, percentage)
+    plot_per_cent_of_HI_in_central(g_m, g_st, percentage)   
 
     df_pairplot = make_dataframe_for_pairplot(g_st, g_m, percentage, group_length, BTT_cen, Mvir_cen, Rvir_cen)
 
-    make_pair_plot(df_pairplot)
+    #make_pair_plot(df_pairplot)
 
+    plot_HI_in_central_per_group(N_sized_groups, df_pairplot)
+  
+    BTT_ratio_NxN_plot(updated_dict)
+    
+    BTT_distribution(updated_dict)
+    
     df_joy = make_dataframe_for_joyplot(df_pairplot)
        
     # Making joypy plot will break if there are no galaxies/groups of certain type, or go up to 100% 
@@ -1873,18 +2212,21 @@ if __name__ == "__main__":
     # Make a loop to get more values
     # I then use """ convert -delay 30 Limit*.png Animated_Limit.gif """ to save the plots as gif with the (module load imagemagick/7.0.8-11)
 
-    Limit_ranges = ([0, 10], [10, 20], [20, 30], [30, 40], [40, 50], [50, 60], [60, 70], [70, 80], [80, 90], [90, 100])
+    #Limit_ranges = ([0, 10], [10, 20], [20, 30], [30, 40], [40, 50], [50, 60], [60, 70], [70, 80], [80, 90], [90, 100])
 
-    for i in Limit_ranges:
-        define_percent_low = i[0]
-        define_percent_limit = i[1]
+    #for i in Limit_ranges:
+    #    define_percent_low = i[0]
+    #    define_percent_limit = i[1]
      
-        limit_low, limit_high, limit_group, limit_central, limit_index, s_ind_limit = find_groups_HI_in_central(define_percent_low, define_percent_limit)
-        g, s, p, sat_m, sat_sm, central_mass, central_st_mass = compute_groups_HI_in_central(limit_group, limit_central, s_ind_limit)
-        plot_limit_HI_in_central(limit_low, limit_high, central_st_mass, central_mass, sat_sm, sat_m)
+    #    limit_low, limit_high, limit_group, limit_central, limit_index, s_ind_limit = find_groups_HI_in_central(define_percent_low, define_percent_limit)
+    #    g, s, p, sat_m, sat_sm, central_mass, central_st_mass = compute_groups_HI_in_central(limit_group, limit_central, s_ind_limit)
+    #    plot_limit_HI_in_central(limit_low, limit_high, central_st_mass, central_mass, sat_sm, sat_m)
 
         # Make SEBORN histograms:
-        plot_limit_seaborn_HI_in_central_groups(limit_low, limit_high, df_pairplot)
+    #    plot_limit_seaborn_HI_in_central_groups(limit_low, limit_high, df_pairplot)
     
-
-
+    High_percentage = 50
+    Low_percentage = 50 
+    chain_plot_two_samples(df_pairplot, High_percentage, Low_percentage)
+    chain_plot_one_sample(df_pairplot, High_percentage)
+      
