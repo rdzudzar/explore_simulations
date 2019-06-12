@@ -1372,7 +1372,7 @@ def make_dataframe_for_pairplot(g_st, g_m, percentage, group_length, BTT_cen, Mv
 
 def plot_HI_in_central_per_group(N_sized_groups, df_percent):
     """
-    Make a % of the HI in central galaxies, for fixed group member size. 
+    Make a % of the HI in central galaxies, for fixed group member size. Colourmap goes from 0 to 100 on all of them so its better to compare them.
     
     Parameters:
     ==========
@@ -1393,7 +1393,7 @@ def plot_HI_in_central_per_group(N_sized_groups, df_percent):
         cm = plt.cm.viridis_r
         
         im = plt.scatter((df_percent['GroupStellarMass'][df_percent['GroupSize']==size]), (df_percent['GroupHIMass'][df_percent['GroupSize']==size]), s=100,
-                                c=df_percent['Percent'][df_percent['GroupSize']==size], edgecolor='k', cmap=cm, label=r'Groups with {0} members'.format(size))
+                                c=df_percent['Percent'][df_percent['GroupSize']==size], edgecolor='k', cmap=cm, vmin=0, vmax=100, label=r'Groups with {0} members'.format(size))
         
         fig.colorbar(im, ax=ax, orientation='vertical', label=r'\% of the M$_{\mathrm{HI}}$ in central',
                     pad=0.01)
@@ -2109,6 +2109,60 @@ def BTT_distribution(groups_dict):
 
 
 
+def BTT_for_groups(df_percent, BTT_number, group_sizes_BTT):
+    """
+    Make plots for the distribution of the bulge to total ratios (BTT; whether they are disky or bulgy) of the central galaxies within a given group size.
+
+    Parameters:
+    ==========
+    df_percent: Dataframe. Has to contain the BTT of the central galaxy. May use df_pairplot.
+    BTT_number: Float. A number between 0 and 1, will be a division between disky and bulgy galaxies.
+    group_sizes: A list of integers. Specifying group sizes.
+
+    Return:
+    ======
+    Saves contour plots.
+
+    """
+
+    for group_size in group_sizes_BTT:
+    
+        fig = plt.figure(figsize=(7,7))                                                               
+        ax = fig.add_subplot(1,1,1)
+        
+        sns.set_style=("ticks", {"xtick.major.size":10, "ytick.major.size":10, "xtick.minor.size":6,"ytick.minor.size":6, "lines.linewidth": 3})
+
+        sns_plot= sns.kdeplot((df_percent['GroupStellarMass'] [ (df_percent["BTTcentral"] > BTT_number) & (df_percent['GroupSize']==group_size) ]), 
+                    (df_percent['GroupHIMass'] [ (df_percent["BTTcentral"] > BTT_number) & (df_percent['GroupSize']==group_size) ]  ), 
+                           shade=True,shade_lowest=False, alpha= 0.5, cmap=grayC_map, label= 'BTTcen $>$ {0}'.format(BTT_number)) #shade=True, shade_lowest=False, 
+        
+        sns.kdeplot((df_percent['GroupStellarMass'][ (df_percent["BTTcentral"] <= BTT_number) & (df_percent['GroupSize']==group_size) ]), 
+                    (df_percent['GroupHIMass'][ (df_percent["BTTcentral"] <= BTT_number) & (df_percent['GroupSize']==group_size) ]),  cmap=devon_map, label= r'BTTcen $\leq$ {0}'.format(BTT_number))
+        
+        
+        ax.set_xlabel(r'log M$_{\star\textrm{group}}$ [M$_{\odot}$]', fontsize=25)
+        ax.set_ylabel(r'log M$_{\textrm{HI}\textrm{group}}$ [M$_{\odot}$]',fontsize=25)
+        ax.yaxis.set_ticks_position('both')
+        ax.xaxis.set_ticks_position('both')
+        
+        plt.legend(loc=3)
+        leg = ax.get_legend()
+        leg.set_title('Group size {0}'.format(group_size)) 
+        leg.legendHandles[0].set_color('purple')
+        leg.legendHandles[1].set_color('grey')
+        #plt.ylim(9.1,11)
+        #fig.savefig('./contour_test.png')
+        #plt.show()
+        #return fig
+        fname = f'./plots/BTT_contour_group_size_{group_size}.png'
+        fig.savefig(fname)
+        print(f"Saved plot to {fname}")
+  
+
+
+
+
+
 
     #########################################################################################################
     ########################################### Handle the functions ########################################
@@ -2120,7 +2174,7 @@ if __name__ == "__main__":
     if not os.path.exists(outdir): os.makedirs(outdir)
 
     Mass_cutoff = 0.06424
-    number_of_files = 250
+    number_of_files = 15
     h = 0.73
     group_size_for_two_sided = 4
     
@@ -2131,6 +2185,9 @@ if __name__ == "__main__":
     how_many_groups = 3    
 
     N_sized_groups = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+
+    BTT_number = 0.6
+    group_sizes_BTT = [3, 4, 5, 6, 7, 8, 9, 10]
 
     indir = '/fred/oz042/rdzudzar/simulation_catalogs/darksage/millennium_latest/output/' # directory where the Dark Sage data are
 
@@ -2202,11 +2259,14 @@ if __name__ == "__main__":
     BTT_ratio_NxN_plot(updated_dict)
     
     BTT_distribution(updated_dict)
-    
-    df_joy = make_dataframe_for_joyplot(df_pairplot)
+   
+    BTT_for_groups(df_pairplot, BTT_number, group_sizes_BTT)
+        
+ 
+    #df_joy = make_dataframe_for_joyplot(df_pairplot)
        
     # Making joypy plot will break if there are no galaxies/groups of certain type, or go up to 100% 
-    make_joy_plot(df_joy, group_size_for_joy_plot, how_many_groups, cmap_one, cmap_two) 
+   # make_joy_plot(df_joy, group_size_for_joy_plot, how_many_groups, cmap_one, cmap_two) 
 
     # For the Limit of HI in centrala find distribution of the central galaxies and theirr satellites 
     # Make a loop to get more values
@@ -2225,8 +2285,9 @@ if __name__ == "__main__":
         # Make SEBORN histograms:
     #    plot_limit_seaborn_HI_in_central_groups(limit_low, limit_high, df_pairplot)
     
-    High_percentage = 50
-    Low_percentage = 50 
-    chain_plot_two_samples(df_pairplot, High_percentage, Low_percentage)
-    chain_plot_one_sample(df_pairplot, High_percentage)
+   # High_percentage = 50
+   # Low_percentage = 50 
+   # chain_plot_two_samples(df_pairplot, High_percentage, Low_percentage)
+   # chain_plot_one_sample(df_pairplot, High_percentage)
+
       
