@@ -1403,7 +1403,8 @@ def plot_HI_in_central_per_group(N_sized_groups, df_percent):
         ax.legend(loc=2)
         leg = ax.get_legend()
         leg.legendHandles[0].set_color('k')
-        
+        plt.xlim( 9.3, 12.5)
+        plt.ylim(7, 11.2)
         
         plt.savefig('./plots/Groups{0}_HIinCentral.png'.format(size))
     return
@@ -1619,9 +1620,7 @@ def find_groups_HI_in_central(define_percent_low, define_percent_limit):
     g_ind_limit: Nested list of integers. Indices  of the group/halo galaxies.  in which the central galaxies satisfies the condition given with the define_percent_low/define_percent_high
     c_ind_limit: Nested list of integers. Indices of the central galaxies.  in which the central galaxies satisfies the condition given with the define_percent_low/define_percent_high
     s_ind_limit: Nested list of integers. Indices of the satellite galaxies.  in which the central galaxies satisfies the condition given with the define_percent_low/define_percent_high
- 
-
- 
+  
     
     Usage:
     ======
@@ -2174,7 +2173,7 @@ if __name__ == "__main__":
     if not os.path.exists(outdir): os.makedirs(outdir)
 
     Mass_cutoff = 0.06424
-    number_of_files = 15
+    number_of_files = 250
     h = 0.73
     group_size_for_two_sided = 4
     
@@ -2185,9 +2184,10 @@ if __name__ == "__main__":
     how_many_groups = 3    
 
     N_sized_groups = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
-
-    BTT_number = 0.6
-    group_sizes_BTT = [3, 4, 5, 6, 7, 8, 9, 10]
+    
+    # Parameters for BTT plots
+    BTT_number = 0.6 # Separation between bulgy/disky galaxy
+    group_sizes_BTT = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] # Group member size
 
     indir = '/fred/oz042/rdzudzar/simulation_catalogs/darksage/millennium_latest/output/' # directory where the Dark Sage data are
 
