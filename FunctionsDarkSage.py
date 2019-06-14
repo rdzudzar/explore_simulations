@@ -38,6 +38,20 @@ import random
 import warnings
 warnings.filterwarnings("ignore")
 
+# mpi4py Preamble
+try:
+    from mpi4py import MPI
+except ImportError:
+    rank = 0
+    size = 1
+    is_mpi = False
+    print("MPI is disabled.")
+else:
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+    is_mpi = True
+
 ##### SET PLOTTING DEFAULTS #####
 fsize = 26
 matplotlib.rcParams.update({'font.size': fsize, 'xtick.major.size': 10, 'ytick.major.size': 10, 'xtick.major.width': 1, 'ytick.major.width': 1, 'ytick.minor.size': 5, 'xtick.minor.size': 5, 'xtick.direction': 'in', 'ytick.direction': 'in', 'axes.linewidth': 1, 'text.usetex': True, 'font.family': 'serif', 'font.serif': 'Times New Roman', 'legend.numpoints': 1, 'legend.columnspacing': 1, 'legend.fontsize': fsize-4, 'xtick.top': True, 'ytick.right': True})
@@ -171,7 +185,7 @@ def create_G_dataframe(indir, n_files):
 	#   0 = Mini Millennium, 1 = Full Millennium, 2 = SMDPL
 
 	fpre = 'model_z0.000' # what is the prefix name of the z=0 files
-	files = range(n_files) # list of file numbers you want to read
+	files = np.arange(rank, n_files, size) # list of file numbers you want to read
 
 	Nannuli = 30 # number of annuli used for discs in Dark Sage
 	FirstBin = 1.0 # copy from parameter file -- sets the annuli's sizes
@@ -908,7 +922,7 @@ def hist_Mhi_vs_Mstar_each_group(groups_dict):
 
 
 @jit
-def find_richer_central_for_Nsized_group(grp_length):
+def find_richer_central_for_Nsized_group(grp_length, debug=False):
 
     """
     Find groups where centrals are the HI richest (central has the most HI than either of its satellites) and HI poorest and plot them.
@@ -937,17 +951,20 @@ def find_richer_central_for_Nsized_group(grp_length):
         sat_mass = np.sum(G['DiscHI'],axis=1)[satellite_inds]
         
         if (central_mass > sat_mass).all(): #check conditions
-            print("Central is the most HI massive")
+            if debug:
+                print("Central is the most HI massive")
             richer_central_ind.append(central_idx)
             richer_sat_ind.append(satellite_inds)
         else:
-            print("Satellite is more HI massive thatn central")
+            if debug:
+                print("Satellite is more HI massive thatn central")
             poorer_central_ind.append(central_idx)
             poorer_sat_ind.append(satellite_inds)
         #print(sat_mass > central_mass)
-        
-        print("Central mass is {0} and sat masses are {1}".format(central_mass, sat_mass))
-        print("")
+
+        if debug:        
+            print("Central mass is {0} and sat masses are {1}".format(central_mass, sat_mass))
+            print("")
 
     #Masses, obtained from the indices: 
     richer_central_hi_m = np.log10( (np.sum(G['DiscHI'],axis=1)[richer_central_ind] *1e10/h )+1)
@@ -1228,7 +1245,9 @@ def group_indices_for_percentage(updated_dict):
     s_ind = []
     g_ind = []
 
-    for i in trange(3,41,1): #starting grom galaxy pairs
+    #for i in updated_dict.keys():
+
+    for i in trange(3,10,1): #starting grom galaxy pairs
         for group_key in updated_dict[i]["Groups"].keys():
             central_idx = updated_dict[i]["Groups"][group_key]["Centrals"] #give indices
             c_ind.append(central_idx)
@@ -1278,17 +1297,23 @@ def compute_group_properties(c_ind, s_ind, g_ind):
         # Extract group length
         size = len(i)
         group_length.append(size)
-    
+
     # Compute central galaxies
+
     central_mass = np.sum(G['DiscHI'],axis=1)[c_ind]*1e10/h
     central_st_mass = G['StellarMass'][c_ind]*1e10/h
-    
+    print("Computed central mass")
+    print("Computed satellite mass")
+    exit()
+
     #Compute bulge to total ratio of the central galaxy
     BTT_cen = (G['InstabilityBulgeMass'][c_ind] + G['MergerBulgeMass'][c_ind]) / ( G['StellarMass'][c_ind] )
-    
+
+    print("Computed BTT") 
     # Virial mass and radius
     Mvir_cen = np.log10( (G['Mvir'][c_ind])*1e10/h)
     Rvir_cen = G['Rvir'][c_ind]
+    print("Computed Mvir Rvir") 
 
     # Compute percentage
     percentage = (central_mass.ravel()/g_m)*100
@@ -1668,13 +1693,13 @@ def compute_groups_HI_in_central(g_ind_limit, c_ind_limit, s_ind_limit):
     """
     Computed group properties. Groups are the ones that satisfy the condition of the % of HI in central.
     
-    Parameters:
+    Parameters
     ==========
     g_ind_limit: Nested list of integers. Indices  of the group/halo galaxies.  in which the central galaxies satisfies the condition given with the define_percent_low/define_percent_high
     c_ind_limit: Nested list of integers. Indices of the central galaxies.  in which the central galaxies satisfies the condition given with the define_percent_low/define_percent_high
     s_ind_limit: Nested list of integers. Indices of the satellite galaxies.  in which the central galaxies satisfies the condition given with the define_percent_low/define_percent_high
  
-    Return:
+    Return
     ======
     A number of group properties.
     g_m, g_st: List of floats. Respectively group HI mass and group stellar mass.
@@ -1739,7 +1764,7 @@ def plot_limit_HI_in_central(limit_low, limit_high, central_st_mass, central_mas
     ========
     Saves a number of plots.
 
-    Usate:
+    Usage:
 
     Limit_ranges = ([0, 10], [10, 20], [20, 30], [30, 40], [40, 50], [50, 60], [60, 70], [70, 80], [80, 90], [90, 100])
 
@@ -2172,8 +2197,10 @@ if __name__ == "__main__":
     outdir = '/fred/oz042/rdzudzar/python/plots/' # where the plots will be saved
     if not os.path.exists(outdir): os.makedirs(outdir)
 
+    debug = False
+
     Mass_cutoff = 0.06424
-    number_of_files = 250
+    number_of_files = 30
     h = 0.73
     group_size_for_two_sided = 4
     
@@ -2212,8 +2239,8 @@ if __name__ == "__main__":
     updated_dict = create_cen_sat_from_groups_dict(groups, store_cen_indices) 
 
     # For two-sided histogram richer/poorer 
-    grp_length = 5 
-    richer_central_ind, poorer_central_ind, richer_sat_ind, poorer_sat_ind, richer_central_s_m, richer_central_hi_m, poorer_central_s_m, poorer_central_hi_m,  richer_sat_hi_m, poorer_sat_hi_m, richer_sat_s_m, poorer_sat_s_m = find_richer_central_for_Nsized_group(grp_length)
+    grp_length = 3
+    richer_central_ind, poorer_central_ind, richer_sat_ind, poorer_sat_ind, richer_central_s_m, richer_central_hi_m, poorer_central_s_m, poorer_central_hi_m,  richer_sat_hi_m, poorer_sat_hi_m, richer_sat_s_m, poorer_sat_s_m = find_richer_central_for_Nsized_group(grp_length, debug=debug)
 
 
 
@@ -2246,6 +2273,7 @@ if __name__ == "__main__":
     c_ind, s_ind, g_ind = group_indices_for_percentage(updated_dict)
     
     # Compute group masses (HI and stellar) 
+
     g_m, g_st, percentage, BTT_cen, Mvir_cen, Rvir_cen, group_length = compute_group_properties(c_ind, s_ind, g_ind)
     
     plot_per_cent_of_HI_in_central(g_m, g_st, percentage)   
@@ -2261,7 +2289,7 @@ if __name__ == "__main__":
     BTT_distribution(updated_dict)
    
     BTT_for_groups(df_pairplot, BTT_number, group_sizes_BTT)
-        
+
  
     #df_joy = make_dataframe_for_joyplot(df_pairplot)
        
