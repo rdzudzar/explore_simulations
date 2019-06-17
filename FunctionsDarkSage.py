@@ -162,67 +162,66 @@ def galdtype_darksage(Nannuli=30):
     Galdesc = np.dtype({'names':names, 'formats':formats}, align=True)
     return Galdesc
 
-def create_G_dataframe(indir, n_files):
-	
-	"""
-	Create DarkSage dataframe 'G'.
+def create_G_dataframe(indir, n_files, requested_fields=[]):
 
-	Parameters:
-	==========
-	indir - String. Path to a directory where the simulation output is storred.
-	n_files - Integer. Number of file to be used. (Big millenium has max 512 files; mini millenium has max 8 files)
-	
-	Returns:
-	=======
-	G  - Data Frame.
+    """
+    Create DarkSage dataframe 'G'.
 
-	"""
+    Parameters:
+    ==========
+    indir - String. Path to a directory where the simulation output is storred.
+    n_files - Integer. Number of file to be used. (Big millenium has max 512 files; mini millenium has max 8 files)
+    requested_fields - List of strings. The fields that are kept when reading the files. E.g. requested_fields=["StellarMass", "BTT"] will return ONLY G["StellarMass] and ["BTT"].   
 
+    Returns:
+    =======
+    G  - Data Frame.
 
-	n_files = number_of_files
-	###### USER NEEDS TO SET THESE THINGS ######
-	sim = 1 # which simulation Dark Sage has been run on -- if it's new, you will need to set its defaults below.
-	#   0 = Mini Millennium, 1 = Full Millennium, 2 = SMDPL
+    """
 
-	fpre = 'model_z0.000' # what is the prefix name of the z=0 files
-	files = np.arange(rank, n_files, size) # list of file numbers you want to read
+    ###### USER NEEDS TO SET THESE THINGS ######
+    sim = 1 # which simulation Dark Sage has been run on -- if it's new, you will need to set its defaults below.
+    #   0 = Mini Millennium, 1 = Full Millennium, 2 = SMDPL
 
-	Nannuli = 30 # number of annuli used for discs in Dark Sage
-	FirstBin = 1.0 # copy from parameter file -- sets the annuli's sizes
-	ExponentBin = 1.4
-	###### ============================== ######
+    fpre = "model_z0.000" # what is the prefix name of the z=0 files
+    files = np.arange(rank, n_files, size) # list of file numbers you want to read
+    #files = list(range(n_files))
 
 
+    Nannuli = 30 # number of annuli used for discs in Dark Sage
+    FirstBin = 1.0 # copy from parameter file -- sets the annuli's sizes
+    ExponentBin = 1.4
+    ###### ============================== ######
 
-	##### SIMULATION DEFAULTS #####
-	if sim==0:
-	    h = 0.73
-	    Lbox = 62.5/h * (len(files)/8.)**(1./3)
-	elif sim==1:
-	    h = 0.73
-	    Lbox = 500.0/h * (len(files)/512.)**(1./3)
-	elif sim==2:
-	    h = 0.6777
-	    Lbox = 400.0/h * (len(files)/1000.)**(1./3)
+    ##### SIMULATION DEFAULTS #####
+    if sim==0:
+        h = 0.73
+        Lbox = 62.5/h * (len(files)/8.)**(1./3)
+    elif sim==1:
+        h = 0.73
+        Lbox = 500.0/h * (len(files)/512.)**(1./3)
+    elif sim==2:
+        h = 0.6777
+        Lbox = 400.0/h * (len(files)/1000.)**(1./3)
 	# add here 'elif sim==3:' etc for a new simulation
-	else:
-	    print('Please specify a valid simulation.  You may need to add its defaults to this code.')
-	    quit()
-	######  ================= #####
+    else:
+        print('Please specify a valid simulation.  You may need to add its defaults to this code.')
+        quit()
+    ######  ================= #####
 
 
-	##### READ DARK SAGE DATA #####
-	DiscBinEdge = np.append(0, np.array([FirstBin*ExponentBin**i for i in range(Nannuli)])) / h
-	G = r.darksage_snap(indir+fpre, files, Nannuli=Nannuli)
-	######  ================= #####
+    ##### READ DARK SAGE DATA #####
+    DiscBinEdge = np.append(0, np.array([FirstBin*ExponentBin**i for i in range(Nannuli)])) / h
+    G = r.darksage_snap(indir+fpre, files, requested_fields = requested_fields, Nannuli=Nannuli)
+    ######  ================= #####
 
 
-	# Make a sub_section of dataframe G so that it is controlled by the LenMax
-	print('LenMax:', len(G['LenMax']))
-	G = G [G['LenMax']>=100 ]
-	print('LenMax > 100:', len(G['LenMax']))
+    # Make a sub_section of dataframe G so that it is controlled by the LenMax
+    print('LenMax:', len(G['LenMax']))
+    G = G [G['LenMax']>=100 ]
+    print('LenMax > 100:', len(G['LenMax']))
 
-	return G
+    return G
 
 # Start extracting needed indices
 def extract_central_indices(G):
@@ -1300,11 +1299,12 @@ def compute_group_properties(c_ind, s_ind, g_ind):
 
     # Compute central galaxies
 
+    print(c_ind[0:100])
+
     central_mass = np.sum(G['DiscHI'],axis=1)[c_ind]*1e10/h
     central_st_mass = G['StellarMass'][c_ind]*1e10/h
     print("Computed central mass")
     print("Computed satellite mass")
-    exit()
 
     #Compute bulge to total ratio of the central galaxy
     BTT_cen = (G['InstabilityBulgeMass'][c_ind] + G['MergerBulgeMass'][c_ind]) / ( G['StellarMass'][c_ind] )
@@ -2200,7 +2200,7 @@ if __name__ == "__main__":
     debug = False
 
     Mass_cutoff = 0.06424
-    number_of_files = 30
+    number_of_files = 15
     h = 0.73
     group_size_for_two_sided = 4
     
@@ -2221,7 +2221,8 @@ if __name__ == "__main__":
     NpartMed = 100 # minimum number of particles for finding relevant medians for minima on plots
 
     print("Reading in {0} galaxies file".format(number_of_files))
-    G = create_G_dataframe(indir, number_of_files)
+    requested_fields = []
+    G = create_G_dataframe(indir, number_of_files, requested_fields)
 
 	# Get the indices and dictionary(ies) needed for plots
 	# Indices - all
