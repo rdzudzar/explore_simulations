@@ -442,7 +442,7 @@ def plot_len_max(G):
 	#ax.set_ylabel(r'log M$_{\textrm{HI}}$ [M$_{\odot}$]',fontsize=25)
 	plt.legend()
 	plt.show()
-	plt.savefig('./plots/LenMax_plot.png')
+	plt.savefig(outdir+'LenMax_plot.png')
 
 
 
@@ -511,7 +511,7 @@ def plot_single_galaxies(G, single_gal_ind):
 	ax.set_ylabel(r'log M$_{\textrm{HI}}$ [M$_{\odot}$]',fontsize=25)
 	plt.legend(loc=4)
 	plt.show()
-	plt.savefig('./plots/Single_galaxies_MHIvsMst.png')
+	plt.savefig(outdir+'Single_galaxies_MHIvsMst.png')
 
 def plot_group_numbers_and_sizes(updated_dict):
 
@@ -555,7 +555,7 @@ def plot_group_numbers_and_sizes(updated_dict):
 	plt.ylabel('Number of Groups')
 	plt.legend(loc=1)
 	plt.show()
-	plt.savefig('./plots/Group_statistics.png')
+	plt.savefig(outdir+'Group_statistics.png')
 
 
 # Initiate figure and how large it will be
@@ -640,7 +640,7 @@ def plot_mhi_vs_ms_3x3(groups_dict):
     plt.subplots_adjust(wspace = 0.0, hspace = 0.0)
     plt.show()
     #return fig
-    plt.savefig('./plots/NxN_Mhi_vs_Mst.png')
+    plt.savefig(outdir+'NxN_Mhi_vs_Mst.png')
 
 
 def two_sided_histogram_group_and_single(updated_dict, group_size):
@@ -755,8 +755,8 @@ def two_sided_histogram_group_and_single(updated_dict, group_size):
     axScatter.legend(loc=3)
 
     #for i in group_size:
-    fname = f'./plots/Two_sided_Groups_and_single{group_size}.png'
-    plt.savefig(fname)
+    fname = f'Two_sided_Groups_and_single{group_size}.png'
+    plt.savefig(outdir+fname)
     print(f"Saved plot to {fname}")
     return #plt.show(), x_cen, x_sat, y_cen, y_sat
 
@@ -868,8 +868,8 @@ def two_sided_histogram_groups(updated_dict, group_size, color='#1f78b4'):
 
 
     # Save the output
-    fname = f'./plots/Two_sided_Groups{group_size}.png'
-    plt.savefig(fname)
+    fname = f'Two_sided_Groups{group_size}.png'
+    plt.savefig(outdir+fname)
     print(f"Saved plot to {fname}")
    
     return #plt.show()
@@ -998,7 +998,7 @@ def find_richer_central_for_Nsized_group(grp_length, debug=False):
     plt.xlim(7,11)
     plt.legend(loc=2)
     plt.show()
-    plt.savefig("./plots/HI_richer_and_poorer_centrals.png")
+    plt.savefig(outdir+"HI_richer_and_poorer_centrals.png")
 
        
     return richer_central_ind, poorer_central_ind, richer_sat_ind, poorer_sat_ind, richer_central_s_m, richer_central_hi_m, poorer_central_s_m, poorer_central_hi_m, richer_sat_hi_m, poorer_sat_hi_m, richer_sat_s_m, poorer_sat_s_m
@@ -1101,7 +1101,7 @@ def two_sided_histogram_rich(x_cen_rich, y_cen_rich, x_cen_poor, y_cen_poor):
 
     axScatter.legend(loc=3)
 
-    plt.savefig("./plots/Two_sided_HI_richer_and_poorer_centrals.png")
+    plt.savefig(outdir+"Two_sided_HI_richer_and_poorer_centrals.png")
 
 
     return 
@@ -1216,7 +1216,7 @@ def two_sided_histogram_rich_groups(grp_length, x_cen_rich, y_cen_rich, x_cen_po
     leg = axScatter.legend(loc=3, fontsize=13)
 
     leg.set_title('Group size = {0}'.format(grp_length)) 
-    plt.savefig("./plots/Two_sided_rich_groups.png")
+    plt.savefig(outdir+"Two_sided_rich_groups.png")
 
 
     return    
@@ -1358,7 +1358,7 @@ def plot_per_cent_of_HI_in_central(g_m, g_st, percentage):
     leg = ax.get_legend()
     leg.legendHandles[0].set_color('k')
 
-    plt.savefig('./plots/Percent_HIinCentral.png')
+    plt.savefig(outdir+'Percent_HIinCentral.png')
     return 
 
 
@@ -1431,7 +1431,7 @@ def plot_HI_in_central_per_group(N_sized_groups, df_percent):
         plt.xlim( 9.3, 12.5)
         plt.ylim(7, 11.2)
         
-        plt.savefig('./plots/Groups{0}_HIinCentral.png'.format(size))
+        plt.savefig(outdir+'Groups{0}_HIinCentral.png'.format(size))
     return
 
 
@@ -1538,7 +1538,7 @@ def make_pair_plot(dataframe):
             xticklabels=corr.columns,
             yticklabels=corr.columns)
 
-    plt.savefig("./plots/Pair_correlation_plot_groups.png")
+    plt.savefig(outdir+"Pair_correlation_plot_groups.png")
 
     return dataframe
 
@@ -1617,8 +1617,8 @@ def make_joy_plot(dataframe, group_size_joy, how_many_groups, colormap_one, colo
         plt.show()
         plt.tight_layout()
         # Save the output
-        fname = f'./plots/Joy_plot_groups_of_size_{group_size_for_joy_plot[0]}_{group_size_for_joy_plot[1]}_{group_size_for_joy_plot[2]}.png'
-        plt.savefig(fname)
+        fname = f'Joy_plot_groups_of_size_{group_size_for_joy_plot[0]}_{group_size_for_joy_plot[1]}_{group_size_for_joy_plot[2]}.png'
+        plt.savefig(outdir+fname)
         print(f"Saved plot to {fname}")
        
 
@@ -1808,8 +1808,8 @@ def plot_limit_HI_in_central(limit_low, limit_high, central_st_mass, central_mas
     #plt.savefig('./plots/Limit_rich_centrals_and_satellites.png')
 
      # Save the output
-    fname = f'./plots/Limit_{limit_low}_and_{limit_high}_rich_centrals_and_satellites.png'
-    plt.savefig(fname)
+    fname = f'Limit_{limit_low}_and_{limit_high}_rich_centrals_and_satellites.png'
+    plt.savefig(outdir+fname)
     print(f"Saved plot to {fname}")
    
 
@@ -1853,8 +1853,8 @@ def plot_limit_seaborn_HI_in_central_groups(limit_low, limit_high, df_pairplot):
     # plt.show()
    
     # Save the output
-    fname = f'./plots/Contour_{limit_low}_and_{limit_high}_groups.png'
-    fig.savefig(fname)
+    fname = f'Contour_{limit_low}_and_{limit_high}_groups.png'
+    fig.savefig(outdir+fname)
     print(f"Saved plot to {fname}")
   
     return
@@ -1894,8 +1894,8 @@ def chain_plot_one_sample(df_percent, High_percentage):
     fig.set_size_inches(5.5 + fig.get_size_inches())  # Resize fig for doco. You don't need this.
     # plt.show()
     # Save the output
-    fname = f'./plots/Chainconsumer_above_{High_percentage}_groups.png'
-    fig.savefig(fname)
+    fname = f'Chainconsumer_above_{High_percentage}_groups.png'
+    fig.savefig(outdir+fname)
     print(f"Saved plot to {fname}")
   
     return
@@ -1941,8 +1941,8 @@ def chain_plot_two_samples(df_percent, High_percentage, Low_percentage):
 
 
     # Save the output
-    fname = f'./plots/Chainconsumer_{Low_percentage}_and_{High_percentage}_groups.png'
-    fig.savefig(fname)
+    fname = f'Chainconsumer_{Low_percentage}_and_{High_percentage}_groups.png'
+    fig.savefig(outdir+fname)
     print(f"Saved plot to {fname}")
   
     return
@@ -2057,8 +2057,8 @@ def BTT_ratio_NxN_plot(groups_dict):
     #plt.show()
     #return fig
     # Save the output
-    fname = f'./plots/BTT_NxN_groups.png'
-    fig.savefig(fname)
+    fname = f'BTT_NxN_groups.png'
+    fig.savefig(outdir+fname)
     print(f"Saved plot to {fname}")
     return
 
@@ -2125,8 +2125,8 @@ def BTT_distribution(groups_dict):
     plt.xlim(-0.05,1.05)
     #plt.show()
     #return fig
-    fname = f'./plots/BTT_distribution.png'
-    fig.savefig(fname)
+    fname = f'BTT_distribution.png'
+    fig.savefig(outdir+fname)
     print(f"Saved plot to {fname}")
   
     return
@@ -2178,8 +2178,8 @@ def BTT_for_groups(df_percent, BTT_number, group_sizes_BTT):
         #fig.savefig('./contour_test.png')
         #plt.show()
         #return fig
-        fname = f'./plots/BTT_contour_group_size_{group_size}.png'
-        fig.savefig(fname)
+        fname = f'BTT_contour_group_size_{group_size}.png'
+        fig.savefig(outdir+fname)
         print(f"Saved plot to {fname}")
   
 
@@ -2195,6 +2195,9 @@ def BTT_for_groups(df_percent, BTT_number, group_sizes_BTT):
 if __name__ == "__main__":
 
     outdir = '/fred/oz042/rdzudzar/python/plots/' # where the plots will be saved
+    #outdir = '/home/rdzudzar/scratch/python/plots_mpi/'
+    #outdir = '/home/rdzudzar/scratch/python/plots_200/'
+    #outdir = '/home/rdzudzar/scratch/python/plots_all/'
     if not os.path.exists(outdir): os.makedirs(outdir)
 
     debug = False
@@ -2249,7 +2252,7 @@ if __name__ == "__main__":
     ########################################### Make all plots #############################################
     ########################################################################################################
     
-    #plot_len_max(G)
+    plot_len_max(G)
     #plot_single_galaxies(G, single_gal_ind)	
     #plot_group_numbers_and_sizes(updated_dict)
     #plot_mhi_vs_ms_3x3(updated_dict)
