@@ -34,6 +34,9 @@ import os
 import routines as r
 import random
 
+#Import external files/functions
+import binning_functions
+
 # Warnings are annoying
 import warnings
 warnings.filterwarnings("ignore")
@@ -480,38 +483,62 @@ def single_central_galaxies(groups, G, Mass_cutoff = 0.06424,Group_of_one = 1):
 
 def plot_single_galaxies(G, single_gal_ind):
 
-	"""
-	Plot MHI vs Mstellar for single galaxies. 
-		
-	Parameters:
-	==========
-	G - Data frame.
-	single_gal_ind - List of integers. Indices assigned to the single galaxies.
+    """
+    Plot MHI vs Mstellar for single galaxies. 
+        
+    Parameters:
+    ==========
+    G - Data frame.
+    single_gal_ind - List of integers. Indices assigned to the single galaxies.
 
-	Return:
-	======
-	Save figure.	
-	"""
+    Return:
+    ======
+    Save figure.	
+    """
 
-	Mstellar_single_gal = G["StellarMass"][single_gal_ind]*1e10/h
-	Mcoldgas_single_gal = np.sum(G['DiscHI'],axis=1)[single_gal_ind]*1e10/h
-	Mvir_single_gal = G["Mvir"][single_gal_ind]*1e10/h
-	BTT_single = (G['InstabilityBulgeMass'][single_gal_ind]*1e10/h + G['MergerBulgeMass'][single_gal_ind]*1e10/h) / ( G['StellarMass'][single_gal_ind]*1e10/h )
-
-
-	fig = plt.figure(figsize=(10,10))                                                               
-	ax = fig.add_subplot(1,1,1)
+    Mstellar_single_gal = G["StellarMass"][single_gal_ind]*1e10/h
+    Mcoldgas_single_gal = np.sum(G['DiscHI'],axis=1)[single_gal_ind]*1e10/h
+    Mvir_single_gal = G["Mvir"][single_gal_ind]*1e10/h
+    BTT_single = (G['InstabilityBulgeMass'][single_gal_ind]*1e10/h + G['MergerBulgeMass'][single_gal_ind]*1e10/h) / ( G['StellarMass'][single_gal_ind]*1e10/h )
 
 
-	plt.plot(np.log10(Mstellar_single_gal), np.log10(Mcoldgas_single_gal), 'o', 
-		 color='lightgrey', markeredgecolor='k', markersize=8, markeredgewidth=0.2, label='Single galaxies')
+    fig = plt.figure(figsize=(10,10))                                                               
+    ax = fig.add_subplot(1,1,1)
 
 
-	ax.set_xlabel(r'log M$_{\star}$ [M$_{\odot}$]', fontsize=25)
-	ax.set_ylabel(r'log M$_{\textrm{HI}}$ [M$_{\odot}$]',fontsize=25)
-	plt.legend(loc=4)
-	plt.show()
-	plt.savefig(outdir+'Single_galaxies_MHIvsMst.png')
+    plt.plot(np.log10(Mstellar_single_gal), np.log10(Mcoldgas_single_gal), 'o', 
+         color='lightgrey', markeredgecolor='k', markersize=8, markeredgewidth=0.2, label='Single galaxies')
+
+
+    ax.set_xlabel(r'log M$_{\star}$ [M$_{\odot}$]', fontsize=25)
+    ax.set_ylabel(r'log M$_{\textrm{HI}}$ [M$_{\odot}$]',fontsize=25)
+    plt.legend(loc=4)
+    plt.show()
+    plt.savefig(outdir+'Single_galaxies_MHIvsMst.png')
+
+    print('Binning functions started:')
+
+    # Getting bins and data in the shape fot the binning statistics
+    bin_x = np.arange(3, 12, 0.2)
+    bin_y = np.arange(8.6, 12, 0.2)
+
+    x_data = np.log10(Mstellar_single_gal)[:,0]
+    y_data = np.log10(Mcoldgas_single_gal)[:,0]
+    data_to_bin = Mstellar_single_gal[:,0]
+
+    mean_binned, xedges, yedges, binnumber = binning_functions.do_2D_binning(x_data, y_data, data_to_bin, bin_x, bin_y)    
+    
+    XX, YY = np.meshgrid(xedges, yedges)
+    
+    fig = plt.figure(figsize=(8,12))
+    ax = plt.subplot(111)
+    plot = ax.pcolormesh(XX,YY,mean_binned.T)
+    cbar = plt.colorbar(plot, ax=ax, pad = .015)
+    ax.set_aspect('auto')
+    plt.show()
+
+    plt.savefig(outdir+'Binned_Single_galaxies_MHIvsMst.png')
+
 
 def plot_group_numbers_and_sizes(updated_dict):
 
@@ -2194,7 +2221,8 @@ def BTT_for_groups(df_percent, BTT_number, group_sizes_BTT):
     
 if __name__ == "__main__":
 
-    outdir = '/fred/oz042/rdzudzar/python/plots/' # where the plots will be saved
+    #Outpu directory for saving plots/data
+    outdir = '/fred/oz042/rdzudzar/python/plots/' 
     #outdir = '/home/rdzudzar/scratch/python/plots_mpi/'
     #outdir = '/home/rdzudzar/scratch/python/plots_200/'
     #outdir = '/home/rdzudzar/scratch/python/plots_all/'
@@ -2203,7 +2231,7 @@ if __name__ == "__main__":
     debug = False
 
     Mass_cutoff = 0.06424
-    number_of_files = 15
+    number_of_files = 5
     h = 0.73
     group_size_for_two_sided = 4
     
@@ -2243,8 +2271,8 @@ if __name__ == "__main__":
     updated_dict = create_cen_sat_from_groups_dict(groups, store_cen_indices) 
 
     # For two-sided histogram richer/poorer 
-    grp_length = 3
-    richer_central_ind, poorer_central_ind, richer_sat_ind, poorer_sat_ind, richer_central_s_m, richer_central_hi_m, poorer_central_s_m, poorer_central_hi_m,  richer_sat_hi_m, poorer_sat_hi_m, richer_sat_s_m, poorer_sat_s_m = find_richer_central_for_Nsized_group(grp_length, debug=debug)
+    #grp_length = 3
+    #richer_central_ind, poorer_central_ind, richer_sat_ind, poorer_sat_ind, richer_central_s_m, richer_central_hi_m, poorer_central_s_m, poorer_central_hi_m,  richer_sat_hi_m, poorer_sat_hi_m, richer_sat_s_m, poorer_sat_s_m = find_richer_central_for_Nsized_group(grp_length, debug=debug)
 
 
 
@@ -2253,7 +2281,7 @@ if __name__ == "__main__":
     ########################################################################################################
     
     plot_len_max(G)
-    #plot_single_galaxies(G, single_gal_ind)	
+    plot_single_galaxies(G, single_gal_ind)	
     #plot_group_numbers_and_sizes(updated_dict)
     #plot_mhi_vs_ms_3x3(updated_dict)
 
@@ -2274,25 +2302,25 @@ if __name__ == "__main__":
     #                            richer_sat_s_m.ravel(), richer_sat_hi_m.ravel(), poorer_sat_s_m.ravel(), poorer_sat_hi_m.ravel())
     
     # Group indices
-    c_ind, s_ind, g_ind = group_indices_for_percentage(updated_dict)
+    #c_ind, s_ind, g_ind = group_indices_for_percentage(updated_dict)
     
     # Compute group masses (HI and stellar) 
 
-    g_m, g_st, percentage, BTT_cen, Mvir_cen, Rvir_cen, group_length = compute_group_properties(c_ind, s_ind, g_ind)
+    #g_m, g_st, percentage, BTT_cen, Mvir_cen, Rvir_cen, group_length = compute_group_properties(c_ind, s_ind, g_ind)
     
-    plot_per_cent_of_HI_in_central(g_m, g_st, percentage)   
+    #plot_per_cent_of_HI_in_central(g_m, g_st, percentage)   
 
-    df_pairplot = make_dataframe_for_pairplot(g_st, g_m, percentage, group_length, BTT_cen, Mvir_cen, Rvir_cen)
+    #df_pairplot = make_dataframe_for_pairplot(g_st, g_m, percentage, group_length, BTT_cen, Mvir_cen, Rvir_cen)
 
     #make_pair_plot(df_pairplot)
 
-    plot_HI_in_central_per_group(N_sized_groups, df_pairplot)
+    #plot_HI_in_central_per_group(N_sized_groups, df_pairplot)
   
-    BTT_ratio_NxN_plot(updated_dict)
+    #BTT_ratio_NxN_plot(updated_dict)
     
-    BTT_distribution(updated_dict)
+    #BTT_distribution(updated_dict)
    
-    BTT_for_groups(df_pairplot, BTT_number, group_sizes_BTT)
+    #BTT_for_groups(df_pairplot, BTT_number, group_sizes_BTT)
 
  
     #df_joy = make_dataframe_for_joyplot(df_pairplot)
