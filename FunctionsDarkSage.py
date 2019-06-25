@@ -518,7 +518,8 @@ def plot_single_galaxies(G, single_gal_ind, stat, bin_the_data=False):
     plt.show()
     plt.savefig(outdir+'Single_galaxies_MHIvsMst.png')
 
-
+    if bin_the_data == False:
+        return
 
     if bin_the_data == True:
         print('Binning function started:')
@@ -532,7 +533,8 @@ def plot_single_galaxies(G, single_gal_ind, stat, bin_the_data=False):
         y_data = np.log10(Mcoldgas_single_gal)[:,0]
         data_to_bin = Mstellar_single_gal[:,0]
 
-        # Put the stats that will be computed
+        # Put the stats that will be computed. Using unique to avoid having 'count' twice, as I
+        # always want to have count statistic plot.
         stats = np.unique([stat, 'count'])
 
         for i, stat in enumerate(stats):
@@ -540,14 +542,40 @@ def plot_single_galaxies(G, single_gal_ind, stat, bin_the_data=False):
             # Call 2D_binning from the binning_functions
             stat_binned, xedges, yedges, binnumber = binning_functions.do_2D_binning(x_data, y_data, data_to_bin, bin_x, bin_y, stat)
             # If the stat is count, I want 0 not to be shown on the plot as some color
+
+            # the 'totals' array will hold the sum of each 'data' array
+            if rank == 0:
+                # only processor 0 will actually get the data
+                totals = np.zeros_like(stat_binned)
+            else:
+                totals = None
+            # Mpi4py complains that the array is not contiguous, so make it be.
+            stat_binned = np.ascontiguousarray(stat_binned)
+
+            # use MPI to get the totals. This is where they communicate and pass the information to
+            # each other.
+            comm.Reduce(
+                [stat_binned, MPI.DOUBLE],
+                [totals, MPI.DOUBLE],
+                op = MPI.SUM,
+                root = 0
+                )
+
+            # Non-rank 0 processors won't have received the data. They can continue to the next
+            # iteration.
+            if rank != 0:
+                continue
+            # Set the labels for plot, depending on the statics used. Also set not to show 0 values,
+            # thus avoiding to have colour on the entire plot.
             if stat == 'count':
                 stat_binned[stat_binned == 0] = np.nan
                 cb_label = 'log Counts'
             else:
                 stat_binned
                 cb_label = 'log Stellar Mass ['+stat+']'
-            # Make the plot
 
+
+            # Parameters for meshgrid and make the plot
             XX, YY = np.meshgrid(xedges, yedges)
 
             fig = plt.figure(figsize=(8,8))
@@ -560,14 +588,15 @@ def plot_single_galaxies(G, single_gal_ind, stat, bin_the_data=False):
             ax.set_ylabel(r'log M$_{\textrm{HI}}$ [M$_{\odot}$]',fontsize=20)
             ax.set_title('Single galaxies')
 
-            #plt.legend(loc=4, title='Single galaxies', fontsize=12)
             plt.show()
 
-            plt.savefig(outdir_binned+'Binned_{0}_Single_galaxies_MHIvsMst.png'.format(stat))
-        return
+            fname = f'Binned_{stat}_Single_galaxies_MHIvsMs_size_{size}.png'
+            fig.savefig(outdir_binned+fname)
+            print(f"Saved plot to {fname}")
 
-    else:
-        return
+
+    return
+
 
 def plot_group_numbers_and_sizes(updated_dict):
 
