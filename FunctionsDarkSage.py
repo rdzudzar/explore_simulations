@@ -1306,7 +1306,7 @@ def two_sided_histogram_rich_groups(grp_length, x_cen_rich, y_cen_rich, x_cen_po
 
     return
 
-def group_indices_for_percentage(updated_dict):
+def group_indices_for_percentage(updated_dict, limiting_group_size):
     """
     Extract group based indices of centrals, satellites and all (from the same halo/group).
 
@@ -1314,6 +1314,7 @@ def group_indices_for_percentage(updated_dict):
     ==========
     updated_dict: Nested dictionary. Keyed by the `groups`.
                   Contains Centrals and Satellites which are in groups where galaxies are above the my_mass_cutoff
+    limiting_group_size: Integer. Max size of the group will be limiting_group_size - 1
 
     Returns:
     ========
@@ -1331,7 +1332,7 @@ def group_indices_for_percentage(updated_dict):
 
     #for i in updated_dict.keys():
 
-    for i in trange(3,10,1): #starting grom galaxy pairs
+    for i in trange(3,limiting_group_size,1): #max group size is limiting_group_size-1
         for group_key in updated_dict[i]["Groups"].keys():
             central_idx = updated_dict[i]["Groups"][group_key]["Centrals"] #give indices
             c_ind.append(central_idx)
@@ -1477,6 +1478,8 @@ def make_dataframe_for_pairplot(g_st, g_m, percentage, group_length, BTT_cen, Mv
                             'Mvircen'            : Mvir_cen.ravel(),
                             'Rvircen'            : Rvir_cen.ravel() })
 
+    df_pair.to_csv('../csv_files/Groups_all_60')
+    print('Saved csv file')
     return df_pair
 
 
@@ -2294,7 +2297,8 @@ if __name__ == "__main__":
     debug = False
 
     Mass_cutoff = 0.06424
-    number_of_files = 5
+
+    number_of_files = 512
     h = 0.73
     group_size_for_two_sided = 4
 
@@ -2305,6 +2309,8 @@ if __name__ == "__main__":
     how_many_groups = 3
 
     N_sized_groups = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+
+    limiting_group_size = 60 #max group number will be limiting_group_size - 1
 
     # Parameters for BTT plots
     BTT_number = 0.6 # Separation between bulgy/disky galaxy
@@ -2365,15 +2371,15 @@ if __name__ == "__main__":
     #                            richer_sat_s_m.ravel(), richer_sat_hi_m.ravel(), poorer_sat_s_m.ravel(), poorer_sat_hi_m.ravel())
 
     # Group indices
-    #c_ind, s_ind, g_ind = group_indices_for_percentage(updated_dict)
+    c_ind, s_ind, g_ind = group_indices_for_percentage(updated_dict, limiting_group_size)
 
     # Compute group masses (HI and stellar)
 
-    #g_m, g_st, percentage, BTT_cen, Mvir_cen, Rvir_cen, group_length = compute_group_properties(c_ind, s_ind, g_ind)
+    g_m, g_st, percentage, BTT_cen, Mvir_cen, Rvir_cen, group_length = compute_group_properties(c_ind, s_ind, g_ind)
 
-    #plot_per_cent_of_HI_in_central(g_m, g_st, percentage)
+    plot_per_cent_of_HI_in_central(g_m, g_st, percentage)
 
-    #df_pairplot = make_dataframe_for_pairplot(g_st, g_m, percentage, group_length, BTT_cen, Mvir_cen, Rvir_cen)
+    df_pairplot = make_dataframe_for_pairplot(g_st, g_m, percentage, group_length, BTT_cen, Mvir_cen, Rvir_cen)
 
     #make_pair_plot(df_pairplot)
 
