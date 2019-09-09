@@ -215,6 +215,11 @@ def create_G_dataframe(indir, n_files, requested_fields=[]):
 
     ##### READ DARK SAGE DATA #####
     DiscBinEdge = np.append(0, np.array([FirstBin*ExponentBin**i for i in range(Nannuli)])) / h
+
+    #Read on a file by file basis
+    #G = r.darksage_out_single(2, Nannuli=Nannuli) #not working
+
+    # Standar read in files based on how many you want
     G = r.darksage_snap(indir+fpre, files, requested_fields = requested_fields, Nannuli=Nannuli)
     ######  ================= #####
 
@@ -1331,17 +1336,29 @@ def group_indices_for_percentage(updated_dict, limiting_group_size):
     g_ind = []
 
     #for i in updated_dict.keys():
-
-    for i in trange(3,limiting_group_size,1): #max group size is limiting_group_size-1
+    limit = limiting_group_size
+    for i in trange(3,limit,1): #max group size is limiting_group_size-1
         for group_key in updated_dict[i]["Groups"].keys():
-            central_idx = updated_dict[i]["Groups"][group_key]["Centrals"] #give indices
-            c_ind.append(central_idx)
 
-            all_idx = updated_dict[i]["Groups"][group_key]["Centrals"]+updated_dict[i]["Groups"][group_key]["Satellites"]
-            g_ind.append(all_idx)
+            #Adding check if central is present in a halo. There is at least one halo without
+            #central galaxy
+            if len(updated_dict[i]["Groups"][group_key]["Centrals"])==1:
 
-            satellite_inds = updated_dict[i]["Groups"][group_key]["Satellites"]
-            s_ind.append(satellite_inds)
+                central_idx = updated_dict[i]["Groups"][group_key]["Centrals"] #give indices
+                c_ind.append(central_idx)
+
+                all_idx = updated_dict[i]["Groups"][group_key]["Centrals"]+updated_dict[i]["Groups"][group_key]["Satellites"]
+                g_ind.append(all_idx)
+
+                satellite_inds = updated_dict[i]["Groups"][group_key]["Satellites"]
+                s_ind.append(satellite_inds)
+            # print statement that there are missing centrals in a halo and report satellite indices of
+            # that halo
+            elif len(updated_dict[i]["Groups"][group_key]["Centrals"])!=1:
+                print("There is a halo that does not have the central galaxy, satellites in this\
+                        halo are:", updated_dict[i]["Groups"][group_key]["Satellites"])
+            else:
+                continue
 
     return c_ind, s_ind, g_ind
 
@@ -1385,7 +1402,7 @@ def compute_group_properties(c_ind, s_ind, g_ind):
 
     # Compute central galaxies
 
-    print(c_ind[0:100])
+    print(c_ind[0:10])
 
     central_mass = np.sum(G['DiscHI'],axis=1)[c_ind]*1e10/h
     central_st_mass = G['StellarMass'][c_ind]*1e10/h
@@ -1401,11 +1418,21 @@ def compute_group_properties(c_ind, s_ind, g_ind):
     Rvir_cen = G['Rvir'][c_ind]
     print("Computed Mvir Rvir")
 
+    #Mergers
+    last_major_merger_cen = G['LastMajorMerger'][c_ind]
+    last_minor_merger_cen = G['LastMinorMerger'][c_ind]
+    #Partickle size
+    length_cen = G['Len'][c_ind]
+
+    #ID
+    central_id = G['GalaxyIndex'][c_ind]
+
     # Compute percentage
     percentage = (central_mass.ravel()/g_m)*100
     print('Computed percentage of HI in central')
 
-    return g_m, g_st, percentage, BTT_cen, Mvir_cen, Rvir_cen, group_length
+    return g_m, g_st, percentage, BTT_cen, Mvir_cen, Rvir_cen, group_length, last_major_merger_cen,\
+            last_minor_merger_cen, length_cen, central_id, central_mass, central_st_mass
 
 
 def plot_per_cent_of_HI_in_central(g_m, g_st, percentage):
@@ -1450,7 +1477,8 @@ def plot_per_cent_of_HI_in_central(g_m, g_st, percentage):
 
 
 
-def make_dataframe_for_pairplot(g_st, g_m, percentage, group_length, BTT_cen, Mvir_cen, Rvir_cen):
+def make_dataframe_for_pairplot(g_st, g_m, percentage, group_length, BTT_cen, Mvir_cen, Rvir_cen, last_major_merger_cen,
+            last_minor_merger_cen, length_cen, central_id, central_mass, central_st_mass):
     """
     Create a pandas dataframe.
 
@@ -1474,11 +1502,19 @@ def make_dataframe_for_pairplot(g_st, g_m, percentage, group_length, BTT_cen, Mv
                             'GroupHIMass'        : np.log10(g_m),
                             'Percent'            : percentage,
                             'GroupSize'          : group_length,
+                            'CentralStellarMass' : central_st_mass.ravel(),
+                            'CentralHIMass'      : central_mass.ravel(),
+                            'CentralID'          : central_id.ravel(),
                             'BTTcentral'         : BTT_cen.ravel() ,
+                            'LenCentral'         : length_cen.ravel(),
                             'Mvircen'            : Mvir_cen.ravel(),
-                            'Rvircen'            : Rvir_cen.ravel() })
+                            'Rvircen'            : Rvir_cen.ravel(),
+                            'LastMajorCen'       : last_major_merger_cen.ravel(),
+                            'LastMinorCen'       : last_minor_merger_cen.ravel()
+                            })
 
-    df_pair.to_csv('../csv_files/Groups_all_60')
+
+    df_pair.to_csv('../csv_files/Groups_size100_files512')
     print('Saved csv file')
     return df_pair
 
@@ -2310,7 +2346,7 @@ if __name__ == "__main__":
 
     N_sized_groups = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 
-    limiting_group_size = 60 #max group number will be limiting_group_size - 1
+    limiting_group_size = 101 #max group number will be limiting_group_size - 1
 
     # Parameters for BTT plots
     BTT_number = 0.6 # Separation between bulgy/disky galaxy
@@ -2320,7 +2356,7 @@ if __name__ == "__main__":
 
     NpartMed = 100 # minimum number of particles for finding relevant medians for minima on plots
 
-    print("Reading in {0} galaxies file".format(number_of_files))
+    #print("Reading in {0} galaxies file".format(number_of_files))
     requested_fields = []
     G = create_G_dataframe(indir, number_of_files, requested_fields)
 
@@ -2375,11 +2411,13 @@ if __name__ == "__main__":
 
     # Compute group masses (HI and stellar)
 
-    g_m, g_st, percentage, BTT_cen, Mvir_cen, Rvir_cen, group_length = compute_group_properties(c_ind, s_ind, g_ind)
+    g_m, g_st, percentage, BTT_cen, Mvir_cen, Rvir_cen, group_length, last_major_merger_cen,\
+            last_minor_merger_cen, length_cen, central_id, central_mass, central_st_mass = compute_group_properties(c_ind, s_ind, g_ind)
 
     plot_per_cent_of_HI_in_central(g_m, g_st, percentage)
 
-    df_pairplot = make_dataframe_for_pairplot(g_st, g_m, percentage, group_length, BTT_cen, Mvir_cen, Rvir_cen)
+    df_pairplot = make_dataframe_for_pairplot(g_st, g_m, percentage, group_length, BTT_cen,\
+            Mvir_cen, Rvir_cen,last_major_merger_cen, last_minor_merger_cen, length_cen, central_id, central_mass, central_st_mass)
 
     #make_pair_plot(df_pairplot)
 
