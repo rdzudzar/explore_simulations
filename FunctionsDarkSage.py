@@ -1514,7 +1514,7 @@ def make_dataframe_for_pairplot(g_st, g_m, percentage, group_length, BTT_cen, Mv
                             })
 
 
-    df_pair.to_csv('../csv_files/Groups_size100_files512')
+    #df_pair.to_csv('../csv_files/Groups')
     print('Saved csv file')
     return df_pair
 

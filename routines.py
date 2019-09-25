@@ -30,7 +30,7 @@ def galdtype_darksage(Nannuli=30):
                     ('Vvir'                         , floattype),
                     ('Vmax'                         , floattype),
                     ('VelDisp'                      , floattype),
-                    ('DiscRadii'                    , (floattype, Nannuli+1)), 
+                    ('DiscRadii'                    , (floattype, Nannuli+1)),
                     ('ColdGas'                      , floattype),
                     ('StellarMass'                  , floattype),
                     ('MergerBulgeMass'              , floattype),
@@ -49,7 +49,7 @@ def galdtype_darksage(Nannuli=30):
                     ('StarsMergeBurst'              , floattype),
                     ('DiscHI'                       , (floattype, Nannuli)),
                     ('DiscH2'                       , (floattype, Nannuli)),
-                    ('DiscSFR'                      , (floattype, Nannuli)), 
+                    ('DiscSFR'                      , (floattype, Nannuli)),
                     ('MetalsColdGas'                , floattype),
                     ('MetalsStellarMass'            , floattype),
                     ('ClassicalMetalsBulgeMass'     , floattype),
@@ -65,7 +65,7 @@ def galdtype_darksage(Nannuli=30):
                     ('SfrDiskZ'                     , floattype),
                     ('SfrBulgeZ'                    , floattype),
                     ('DiskScaleRadius'              , floattype),
-                    ('CoolScaleRadius'              , floattype), 
+                    ('CoolScaleRadius'              , floattype),
                     ('StellarDiscScaleRadius'       , floattype),
                     ('Cooling'                      , floattype),
                     ('Heating'                      , floattype),
@@ -85,25 +85,25 @@ def darksage_out_single(fname, fields=[], Nannuli=30):
     # Read a single Dark Sage output file, returning all the galaxy data
     # fname is the full name for the file to read, including its path
     # fields is the list of fields you want to read in.  If empty, will read all fields.
-    
+
     Galdesc = galdtype_darksage(Nannuli)
     if len(fields)==0: fields=list(Galdesc.names)
-    
+
     fin = open(fname, 'rb')  # Open the file
     Ntrees = np.fromfile(fin,np.dtype(np.int32),1)  # Read number of trees in file
     NtotGals = np.fromfile(fin,np.dtype(np.int32),1)[0]  # Read number of gals in file.
-    print("File {0} has {1} galaxies.".format(fname, NtotGals))
+    #print("File {0} has {1} galaxies.".format(fname, NtotGals))
     GalsPerTree = np.fromfile(fin, np.dtype((np.int32, Ntrees)),1) # Read the number of gals in each tree
     G = np.fromfile(fin, Galdesc, NtotGals) # Read all the galaxy data
     G = G[fields]
-    return G 
+    return G
 
 
 def darksage_snap(fpre, filelist, fields=[], requested_fields=[], Nannuli=30):
     # Read full Dark Sage snapshot, going through each file and compiling into 1 array
     # fpre is the name of the file up until the _ before the file number
     # filelist contains all the file numbers you want to read in
-    
+
     Galdesc = galdtype_darksage()
     Glist = []
     Ngal = np.array([],dtype=np.int32)
@@ -113,7 +113,8 @@ def darksage_snap(fpre, filelist, fields=[], requested_fields=[], Nannuli=30):
     G = darksage_out_single(fname, fields, Nannuli)
 
     # Then iterate through all the remaining files (slicing [1:]) and append
-    # all of these new galaxies to our newly created G. 
+    # all of these new galaxies to our newly created G.
+
     for i in tqdm(filelist[1:]):
         fname = "{0}_{1}".format(fpre, i)
 
@@ -129,9 +130,9 @@ def massfunction(mass, Lbox, range=[8,12.5], c='k', lw=2, ls='-', label='', ax=N
     binwidth = edges[1]-edges[0]
     x = edges[:-1] + binwidth/2
     y = N/(binwidth*Lbox**3)
-    
+
     if ax is None: ax = plt.gca()
-    
+
     if len(label)>0:
         ax.plot(x, y, c+ls, linewidth=lw, label=label)
     else:
@@ -231,7 +232,7 @@ def HIH2_massfunction_obsdata(h=0.678, HI=True, H2=True, K=True, OR=False, ax=No
                       [10.178,  -3.677],
                       [10.335,  -4.448],
                       [10.492,  -5.083]])
-        
+
     Martin_data = np.array([[6.302,    -0.504],
                               [6.500,    -0.666],
                               [6.703,    -0.726],
@@ -255,23 +256,23 @@ def HIH2_massfunction_obsdata(h=0.678, HI=True, H2=True, K=True, OR=False, ax=No
                               [10.306,    -3.042],
                               [10.509,    -3.780],
                               [10.703,    -4.534],
-                              [10.907,    -5.437]])     
-                    
+                              [10.907,    -5.437]])
+
     Martin_mid = Martin_data[:,1] + 3*np.log10(h/0.7)
     Martin_x = Martin_data[:,0] + 2*np.log10(0.7/h)
     Martin_high = np.array([-0.206, -0.418, -0.571, -0.725, -1.003, -0.944, -1.144, -1.189, -1.189, -1.358, -1.344, -1.417, -1.528, -1.586, -1.651, -1.753, -1.925, -2.095, -2.281, -2.537, -3.003, -3.729, -4.451, -5.222]) + 3*np.log10(h/0.7)
     Martin_low = np.array([-0.806, -0.910, -0.885, -1.019, -1.268, -1.173, -1.313, -1.314, -1.320, -1.459, -1.443, -1.530, -1.647, -1.669, -1.736, -1.838, -2.021, -2.191, -2.359, -2.621, -3.098, -3.824, -4.618, -5.663]) + 3*np.log10(h/0.7)
-      
+
     Keres_high = np.array([-1.051, -1.821, -1.028, -1.341, -1.343, -1.614, -1.854, -2.791,  -3.54 , -5.021]) + 3*np.log10(h)
     Keres_mid = np.array([-1.271, -1.999, -1.244, -1.477, -1.464, -1.713, -1.929, -2.878,   -3.721, -5.22 ]) + 3*np.log10(h)
     Keres_low = np.array([-1.706, -2.302, -1.71 , -1.676, -1.638, -1.82 , -2.033, -2.977,   -4.097, -5.584]) + 3*np.log10(h)
     Keres_M = np.array([  6.953,   7.353,   7.759,   8.154,   8.553,   8.96 ,   9.365,  9.753,  10.155,  10.558]) - 2*np.log10(h)
-      
+
     ObrRaw_high = np.array([-0.905, -1.122, -1.033, -1.1  , -1.242, -1.418, -1.707, -2.175, -2.984, -4.868]) + 3*np.log10(h)
     ObrRaw_mid = np.array([-1.116, -1.308, -1.252, -1.253, -1.373, -1.509, -1.806, -2.261,  -3.198, -5.067]) + 3*np.log10(h)
     ObrRaw_low = np.array([-1.563, -1.602, -1.73 , -1.448, -1.537, -1.621, -1.918, -2.369,  -3.556, -5.413]) + 3*np.log10(h)
     ObrRaw_M = np.array([ 7.301,  7.586,  7.862,  8.133,  8.41 ,  8.686,  8.966,  9.242,    9.514,  9.788]) - 2*np.log10(h)
-      
+
     HI_x = Zwaan[:,0] - 2*np.log10(h)
     HI_y = 10**Zwaan[:,1] * h**3
 
@@ -289,10 +290,10 @@ def HIH2_massfunction_obsdata(h=0.678, HI=True, H2=True, K=True, OR=False, ax=No
                               [8.37197, -2.22312, -2.30376, -2.14247],
                               [8.78976, -1.94086, -1.99462, -1.90054],
                               [9.18059, -1.98118, -2.06183, -1.90054],
-                              [9.59838, -2.72043, -2.92204, -2.62634], 
+                              [9.59838, -2.72043, -2.92204, -2.62634],
                               [9.98922, -3.67473, -5.98656, -3.31183]])
-    
-    if ax is None: ax = plt.gca()         
+
+    if ax is None: ax = plt.gca()
     if HI and Z: ax.plot(HI_x, HI_y, '-', color='g', lw=8, alpha=0.4, label=r'Zwaan et al.~(2005)')
     if HI and M: ax.fill_between(Martin_x, 10**Martin_high, 10**Martin_low, color='c', alpha=0.4)
     if HI and M: ax.plot([0,1], [1,1], 'c-', lw=8, alpha=0.4, label=r'Martin et al.~(2010)')
@@ -302,7 +303,7 @@ def HIH2_massfunction_obsdata(h=0.678, HI=True, H2=True, K=True, OR=False, ax=No
 
     if H2 and OR: ax.fill_between(ObrRaw_M, 10**ObrRaw_high, 10**ObrRaw_low, color='darkcyan', alpha=0.4)
     if H2 and OR: ax.plot([0,1], [1,1], '-', color='darkcyan', lw=8, alpha=0.4, label=r'Obreschkow \& Rawlings (2009)')
-                        
+
     if H2 and B: ax.fill_between(Boselli_const_XCO[:,0]+2*np.log10(0.7/h), 10**Boselli_const_XCO[:,2]*(h/0.7)**3/0.4, 10**Boselli_const_XCO[:,3]*(h/0.7)**3/0.4, color='orange', alpha=0.4)
     if H2 and B: ax.plot([0,1], [1,1], '-', color='orange', lw=8, alpha=0.4, label=r'Boselli et al.~(2014), const.~$X_{\rm CO}$')
     if H2 and B: ax.fill_between(Boselli_var_XCO[:,0]+2*np.log10(0.7/h), 10**Boselli_var_XCO[:,2]*(h/0.7)**3/0.4, 10**Boselli_var_XCO[:,3]*(h/0.7)**3/0.4, color='violet', alpha=0.4)
@@ -319,16 +320,16 @@ def savepng(filename, xsize=1024, ysize=None, fig=None, transparent=False):
     xpix = 2560
     ypix = 1440
     ss = 27
-    
+
     if ysize==None: ysize = int(xsize*9./16)
-    
-    mydpi = np.sqrt(xpix**2 + ypix**2)/ss 
+
+    mydpi = np.sqrt(xpix**2 + ypix**2)/ss
     xinplot = xsize*(9./7.)/mydpi
     yinplot = ysize*(9./7.)/mydpi
     if fig is None: fig = plt.gcf()
     fig.set_size_inches(xinplot,yinplot)
     fig.set_dpi(mydpi)
-    
+
     filename = str(filename)
     if filename[-4:] != '.png':
         filename = filename+'.png'
@@ -336,11 +337,11 @@ def savepng(filename, xsize=1024, ysize=None, fig=None, transparent=False):
 
 
 def Brown_HI_fractions(h):
-    
+
     logM = np.array([[9.2209911, 9.6852989, 10.180009, 10.665453, 11.098589],
          [9.2085762, 9.6402225, 10.141238, 10.599669, 11.026575],
          [9.2121296, 9.6528578, 10.139588, 10.615245, 11.054683]]) + 2*np.log10(0.7/h) + np.log10(0.61/0.66)
-         
+
     logHIfrac = np.array([[ 0.37694988,  0.0076254,  -0.45345795, -0.90604609, -1.39503932],
            [ 0.15731917, -0.16941574, -0.6199488,  -0.99943721, -1.30476058],
            [ 0.19498822, -0.27559358, -0.74410361, -1.12869251, -1.49363434]]) - np.log10(0.61/0.66)
@@ -350,9 +351,9 @@ def Brown_HI_fractions(h):
                       [2203, 3325, 2899, 1784, 356]])
 
     logM_all = np.log10((10**logM[0,:] * Ngal[0,:] + 10**logM[1,:] * Ngal[1,:] + 10**logM[2,:] * Ngal[2,:]) / (Ngal[0,:]+Ngal[1,:]+Ngal[2,:]))
-    
+
     logHIfrac_all = np.log10((10**logHIfrac[0,:] * Ngal[0,:] + 10**logHIfrac[1,:] * Ngal[1,:] + 10**logHIfrac[2,:] * Ngal[2,:]) / (Ngal[0,:]+Ngal[1,:]+Ngal[2,:]))
-    
+
     logHIfrac_all_err = np.array([np.log10(1.511+0.011)-np.log10(1.511),
                                   np.log10(0.643+0.011)-np.log10(0.643),
                                   np.log10(0.232+0.005)-np.log10(0.232),
@@ -478,8 +479,8 @@ def Leroygals(HI=False, H2=False, HighVvir=True, LowVvir=False, ax=None, SFR=Fal
      [18.3, 4.8, 1.0, 0.5, 0.5, 0.7, 0.8, 0.5, 0.4, 10.5, 0.4, 0.4, 0.4, 0.2, 0.2, 0.2, 0.4, 2.3, 6.1, 0.1, 0.1, 0.7, 0.1, 1.3, 1.6, 0.4, 0.1, 0.2, 0.1, 0.0, 0.0, 0.1, 0.2, 0.9, 0.2],
      [105.1, 92.3, 76.7, 65.5, 62.2, 72.4, 90.2, 90.7, 71.9, 57.9, 55.8, 59.6, 59.9, 48.8, 37.4, 33.5, 30.2, 23.5, 17.4, 13.6, 11.6, 9.8, 7.5, 5.4, 4.1, 3.2, 2.5, 1.8, 1.2, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
      [14, 9.9, 5.1, 4.2, 3.7, 12.2, 23.5, 21.3, 11.9, 8.5, 11.3, 14.1, 15.2, 11, 6.6, 8.7, 10, 6.5, 3.1, 1.9, 2.3, 2.2, 1.5, 0.9, 0.6, 0.4, 0.3, 0.3, 0.2, 0.0, 0.0, 0.4, 0.0, 0.0, 0.0]])
-                     
-                     
+
+
     N3184 = np.array([[0.3, 0.8, 1.3, 1.9, 2.4, 3.0, 3.5, 4.0, 4.6, 5.1, 5.7, 6.2, 6.7, 7.3, 7.8, 8.3, 8.9, 9.4, 10.0, 10.5, 11.0, 11.6, 12.1, 12.6, 13.2, 13.7, 14.3],
     [3.7, 3.2, 3.3, 3.8, 4.7, 5.5, 5.7, 5.9, 6.5, 7.3, 7.5, 7.8, 8.1, 8.0, 7.3, 7.0, 7.0, 6.7, 6.1, 5.4, 5.0, 4.6, 4.0, 3.3, 2.9, 2.8, 2.7],
     [0.5, 0.3, 0.3, 0.3, 0.5, 0.4, 0.4, 0.5, 0.4, 0.3, 0.5, 0.6, 0.6, 0.5, 0.3, 0.3, 0.3, 0.3, 0.2, 0.2, 0.3, 0.3, 0.2, 0.2, 0.2, 0.2, 0.2],
@@ -703,7 +704,7 @@ def SFRD_obs(h, alpha=0.3, ax=None, plus=0):
                               [2.50000, 0.147911, 2.00000, 3.00000, 0.169824, 0.128825],
                               [3.50000, 0.0645654, 3.00000, 4.00000, 0.0776247, 0.0512861],
                               ], dtype=np.float32)
-                              
+
     ObsRedshift = ObsSFRdensity[:,0]
     xErrLo = ObsSFRdensity[:,0]-ObsSFRdensity[:,2]
     xErrHi = ObsSFRdensity[:,3]-ObsSFRdensity[:,0]
