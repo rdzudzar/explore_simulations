@@ -22,6 +22,8 @@ import pandas as pd
 import seaborn as sns
 from itertools import chain
 
+import h5py
+
 from scientific_colourmaps import *
 # joypy
 import joypy
@@ -1518,6 +1520,113 @@ def make_dataframe_for_pairplot(g_st, g_m, percentage, group_length, BTT_cen, Mv
     print('Saved csv file')
     return df_pair
 
+# Make functions for satellite galaxies
+def compute_satellite_properties(c_ind, s_ind, g_ind):
+
+    """
+
+    """
+
+    s_m = []
+    s_st = []
+    btt_s = []
+    mvir_s = []
+    rvir_s = []
+    last_major_merger_s = []
+    last_minor_merger_s = []
+    index_s = []
+    index_c = []
+    sfr = []
+    g_m = []
+    g_st = []
+    grp_length = []
+
+    for i in g_ind:
+        s_mass = np.sum(G['DiscHI'], axis=1)[i]*1e10/h
+        s_st_mass = G['StellarMass'][i]*1e10/h
+
+        g_mass = np.sum(G['DiscHI'],axis=1)[i]*1e10/h
+        g_st_mass = G['StellarMass'][i]*1e10/h
+        g_m.append(np.sum(g_mass, axis=0))
+        g_st.append(np.sum(g_st_mass, axis=0))
+
+        BTT_s = (G['InstabilityBulgeMass'][i] + G['MergerBulgeMass'][i]) / (G['StellarMass'][i])
+        Mvir_s = np.log10( (G['Mvir'][i])*1e10/h)
+        Rvir_s = G['Rvir'][i]
+        Last_major_merger_s = G['LastMajorMerger'][i]
+        Last_minor_merger_s = G['LastMinorMerger'][i]
+
+        Index_s = G['GalaxyIndex'][i]
+        Index_c = G['CentralGalaxyIndex'][i[0]]
+
+        SFR = G['SfrFromH2'][i] + G['SfrInstab'][i] + G['SfrMergeBurst'][i]
+
+        size = len(i)
+        grp_length.append(size)
+
+        s_m.append(s_mass)
+        s_st.append(s_st_mass)
+        btt_s.append(BTT_s)
+        mvir_s.append(Mvir_s)
+        rvir_s.append(Rvir_s)
+        last_major_merger_s.append(Last_major_merger_s)
+        last_minor_merger_s.append(Last_minor_merger_s)
+        index_s.append(Index_s)
+        index_c.append(Index_c)
+        sfr.append(SFR)
+
+    central_mass = np.sum(G['DiscHI'], axis=1)[c_ind]*1e10/h
+    central_st_mass = G['StellarMass'][c_ind]*1e10/h
+    central_id = G['GalaxyIndex'][c_ind]
+
+    return s_m, s_st, btt_s, mvir_s, rvir_s, last_major_merger_s, last_minor_merger_s, index_s,\
+            index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id
+
+
+def make_dataframe_satellites(s_m, s_st, btt_s, mvir_s, rvir_s, last_major_merger_s, last_minor_merger_s, index_s,
+index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id):
+
+    """
+    Create a pandas containind group, central and satellite data.
+
+    Parameters:
+    ==========
+    
+    
+    Returns:
+    =======
+    df_pair: Pandas dataframe.
+    
+    """
+
+    # Define what goes into dataframe
+    df_group = pd.DataFrame({'GroupStellarMass'  : g_st,
+                            'GroupHIMass'        : g_m,
+                            'GroupSize'          : grp_length,
+                            'StellarMass'        : s_st,
+                            'HIMass'             : s_m,
+                            'CentralID'          : index_c,
+                            'ID'                 : index_s,
+                            'BTT'                : btt_s,
+                            'SFR'                : sfr,
+                            'Mvir'               : mvir_s,
+                            'Rvir'               : rvir_s,
+                            'LastMajor'          : last_major_merger_s,
+                            'LastMinor'          : last_minor_merger_s
+                            })
+
+
+    df_group.to_csv('../csv_files/Groups_with_satellites', sep='\t')
+    print('Saved csv file')
+    
+    df_group.to_hdf('../csv_files/Groups_with_satellites_h5.h5', key='df', mode='a')
+    print('Saved h5 file')
+
+    return df_group
+
+
+
+
 
 def plot_HI_in_central_per_group(N_sized_groups, df_percent):
     """
@@ -2346,7 +2455,7 @@ if __name__ == "__main__":
 
     N_sized_groups = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 
-    limiting_group_size = 101 #max group number will be limiting_group_size - 1
+    limiting_group_size = 31 #max group number will be limiting_group_size - 1
 
     # Parameters for BTT plots
     BTT_number = 0.6 # Separation between bulgy/disky galaxy
@@ -2411,13 +2520,22 @@ if __name__ == "__main__":
 
     # Compute group masses (HI and stellar)
 
-    g_m, g_st, percentage, BTT_cen, Mvir_cen, Rvir_cen, group_length, last_major_merger_cen,\
-            last_minor_merger_cen, length_cen, central_id, central_mass, central_st_mass = compute_group_properties(c_ind, s_ind, g_ind)
+    #g_m, g_st, percentage, BTT_cen, Mvir_cen, Rvir_cen, group_length, last_major_merger_cen,\
+    #        last_minor_merger_cen, length_cen, central_id, central_mass, central_st_mass = compute_group_properties(c_ind, s_ind, g_ind)
 
-    plot_per_cent_of_HI_in_central(g_m, g_st, percentage)
+    #plot_per_cent_of_HI_in_central(g_m, g_st, percentage)
 
-    df_pairplot = make_dataframe_for_pairplot(g_st, g_m, percentage, group_length, BTT_cen,\
-            Mvir_cen, Rvir_cen,last_major_merger_cen, last_minor_merger_cen, length_cen, central_id, central_mass, central_st_mass)
+    #df_pairplot = make_dataframe_for_pairplot(g_st, g_m, percentage, group_length, BTT_cen,\
+    #        Mvir_cen, Rvir_cen,last_major_merger_cen, last_minor_merger_cen, length_cen, central_id, central_mass, central_st_mass)
+
+    #Compute group properties with central and satellite galaxies
+
+    s_m, s_st, btt_s, mvir_s, rvir_s, last_major_merger_s, last_minor_merger_s, index_s,\
+    index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id = compute_satellite_properties(c_ind, s_ind, g_ind)
+
+    df_group = make_dataframe_satellites(s_m, s_st, btt_s, mvir_s, rvir_s, last_major_merger_s, last_minor_merger_s, index_s,
+index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id)
+
 
     #make_pair_plot(df_pairplot)
 
