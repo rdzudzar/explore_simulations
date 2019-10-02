@@ -1579,12 +1579,15 @@ def compute_satellite_properties(c_ind, s_ind, g_ind):
     central_st_mass = G['StellarMass'][c_ind]*1e10/h
     central_id = G['GalaxyIndex'][c_ind]
 
+    percentage = (central_mass.ravel()/g_m)*100
+
     return s_m, s_st, btt_s, mvir_s, rvir_s, last_major_merger_s, last_minor_merger_s, index_s,\
-            index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id
+            index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id,\
+            percentage
 
 
 def make_dataframe_satellites(s_m, s_st, btt_s, mvir_s, rvir_s, last_major_merger_s, last_minor_merger_s, index_s,
-index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id):
+index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id, percentage):
 
     """
     Create a pandas containind group, central and satellite data.
@@ -1611,6 +1614,7 @@ index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id):
                             'SFR'                : sfr,
                             'Mvir'               : mvir_s,
                             'Rvir'               : rvir_s,
+                            'Percent'            : percentage,
                             'LastMajor'          : last_major_merger_s,
                             'LastMinor'          : last_minor_merger_s
                             })
@@ -1619,13 +1623,51 @@ index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id):
     df_group.to_csv('../csv_files/Groups_with_satellites', sep='\t')
     print('Saved csv file')
     
-    df_group.to_hdf('../csv_files/Groups_with_satellites_h5.h5', key='df', mode='a')
-    print('Saved h5 file')
+    #This doesn't work, need to build hf5 file.
+    #df_group.to_hdf('../csv_files/Groups_with_satellites_h5.h5', key='df', mode='a')
+    #print('Saved h5 file')
 
     return df_group
 
 
+def create_h5py_dataframe(s_m, s_st, btt_s, mvir_s, rvir_s, last_major_merger_s, last_minor_merger_s, index_s,
+        index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id, percentage):
 
+    """
+    Create h5 file, containing the simulated data for groups, centrals and satellite galaxies.
+    
+    Parameters:
+    -----------
+
+    Returns:
+    --------
+    h5 file
+
+    """
+
+    with h5py.File("Groups_with_satellites.h5", "w") as f:
+
+        for group_num, _ in enumerate(g_st):
+            this_group = f.create_group(f"group_{group_num}")
+            this_group.attrs["CentralID"] = index_c[group_num]
+            #Add items from the table
+            this_group["ID"] = index_s[group_num]
+            this_group["StellarMass"] = s_st[group_num]
+            this_group["HIMass"] = s_m[group_num]
+            this_group["CentralID"] = index_c[group_num]
+            this_group["GroupStellarMass"] = g_st[group_num]
+            this_group["GroupHIMass"] = g_m[group_num]
+            this_group["GroupSize"] = grp_length[group_num]
+            this_group["Percent"] = percentage[group_num]
+            this_group["BTT"] = btt_s[group_num]
+            this_group["SFR"] = sfr[group_num]
+            this_group["Mvir"] = mvir_s[group_num]
+            this_group["Rvir"] = rvir_s[group_num]
+            this_group["LastMajorMerger"] = last_major_merger_s[group_num]
+            this_group["LastMinorMerger"] = last_minor_merger_s[group_num]
+
+    print('h5 file Groups_with_satellites is created')
+    return
 
 
 def plot_HI_in_central_per_group(N_sized_groups, df_percent):
@@ -2531,10 +2573,15 @@ if __name__ == "__main__":
     #Compute group properties with central and satellite galaxies
 
     s_m, s_st, btt_s, mvir_s, rvir_s, last_major_merger_s, last_minor_merger_s, index_s,\
-    index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id = compute_satellite_properties(c_ind, s_ind, g_ind)
+    index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id, percentage = compute_satellite_properties(c_ind, s_ind, g_ind)
 
-    df_group = make_dataframe_satellites(s_m, s_st, btt_s, mvir_s, rvir_s, last_major_merger_s, last_minor_merger_s, index_s,
-index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id)
+    #df_group = make_dataframe_satellites(s_m, s_st, btt_s, mvir_s, rvir_s, last_major_merger_s, last_minor_merger_s, index_s,
+#index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id)
+
+    create_h5py_dataframe(s_m, s_st, btt_s, mvir_s, rvir_s, last_major_merger_s, last_minor_merger_s, index_s,
+index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id, percentage)
+
+
 
 
     #make_pair_plot(df_pairplot)
