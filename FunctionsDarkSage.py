@@ -1339,7 +1339,7 @@ def group_indices_for_percentage(updated_dict, limiting_group_size):
 
     #for i in updated_dict.keys():
     limit = limiting_group_size
-    for i in trange(3,limit,1): #max group size is limiting_group_size-1
+    for i in trange(1,limit,1): #max group size is limiting_group_size-1
         for group_key in updated_dict[i]["Groups"].keys():
 
             #Adding check if central is present in a halo. There is at least one halo without
@@ -1516,7 +1516,7 @@ def make_dataframe_for_pairplot(g_st, g_m, percentage, group_length, BTT_cen, Mv
                             })
 
 
-    #df_pair.to_csv('../csv_files/Groups')
+    df_pair.to_csv('../csv_files/Single_galaxies.csv')
     print('Saved csv file')
     return df_pair
 
@@ -1620,7 +1620,7 @@ index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id, 
                             })
 
 
-    df_group.to_csv('../csv_files/Groups_with_satellites', sep='\t')
+    #df_group.to_csv('../csv_files/Groups_with_satellites', sep='\t')
     print('Saved csv file')
     
     #This doesn't work, need to build hf5 file.
@@ -2497,7 +2497,7 @@ if __name__ == "__main__":
 
     N_sized_groups = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 
-    limiting_group_size = 31 #max group number will be limiting_group_size - 1
+    limiting_group_size = 2 #max group number will be limiting_group_size - 1
 
     # Parameters for BTT plots
     BTT_number = 0.6 # Separation between bulgy/disky galaxy
@@ -2562,24 +2562,24 @@ if __name__ == "__main__":
 
     # Compute group masses (HI and stellar)
 
-    #g_m, g_st, percentage, BTT_cen, Mvir_cen, Rvir_cen, group_length, last_major_merger_cen,\
-    #        last_minor_merger_cen, length_cen, central_id, central_mass, central_st_mass = compute_group_properties(c_ind, s_ind, g_ind)
+    g_m, g_st, percentage, BTT_cen, Mvir_cen, Rvir_cen, group_length, last_major_merger_cen,\
+            last_minor_merger_cen, length_cen, central_id, central_mass, central_st_mass = compute_group_properties(c_ind, s_ind, g_ind)
 
     #plot_per_cent_of_HI_in_central(g_m, g_st, percentage)
 
-    #df_pairplot = make_dataframe_for_pairplot(g_st, g_m, percentage, group_length, BTT_cen,\
-    #        Mvir_cen, Rvir_cen,last_major_merger_cen, last_minor_merger_cen, length_cen, central_id, central_mass, central_st_mass)
+    df_pairplot = make_dataframe_for_pairplot(g_st, g_m, percentage, group_length, BTT_cen,\
+            Mvir_cen, Rvir_cen,last_major_merger_cen, last_minor_merger_cen, length_cen, central_id, central_mass, central_st_mass)
 
     #Compute group properties with central and satellite galaxies
 
-    s_m, s_st, btt_s, mvir_s, rvir_s, last_major_merger_s, last_minor_merger_s, index_s,\
-    index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id, percentage = compute_satellite_properties(c_ind, s_ind, g_ind)
+    #s_m, s_st, btt_s, mvir_s, rvir_s, last_major_merger_s, last_minor_merger_s, index_s,\
+    #index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id, percentage = compute_satellite_properties(c_ind, s_ind, g_ind)
 
     #df_group = make_dataframe_satellites(s_m, s_st, btt_s, mvir_s, rvir_s, last_major_merger_s, last_minor_merger_s, index_s,
 #index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id)
 
-    create_h5py_dataframe(s_m, s_st, btt_s, mvir_s, rvir_s, last_major_merger_s, last_minor_merger_s, index_s,
-index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id, percentage)
+    #create_h5py_dataframe(s_m, s_st, btt_s, mvir_s, rvir_s, last_major_merger_s, last_minor_merger_s, index_s,
+    #index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id, percentage)
 
 
 
