@@ -188,7 +188,7 @@ def create_G_dataframe(indir, n_files, requested_fields=[]):
     sim = 1 # which simulation Dark Sage has been run on -- if it's new, you will need to set its defaults below.
     #   0 = Mini Millennium, 1 = Full Millennium, 2 = SMDPL
 
-    fpre = "model_z0.000" # what is the prefix name of the z=0 files
+    fpre = "model_z0.000" #"model_z0.000" # what is the prefix name of the z=0 files
     files = np.arange(rank, n_files, size) # list of file numbers you want to read
     #files = list(range(n_files))
 
@@ -328,7 +328,7 @@ def create_groups_dictionary(store_all_indices):
 
 
 @jit
-def create_cen_sat_from_groups_dict(groups, store_cen_indices, my_mass_cutoff=0.06424):
+def create_cen_sat_from_groups_dict(groups, store_cen_indices, my_mass_cutoff=0.0492406):
     """
     Created dictionary which is used to extract indices of central and satellite galaxies, taking into account
     the mass cutoff provided. Also creates "Groups" which store information on a group basis and their sat/cen galaxies.
@@ -456,7 +456,7 @@ def plot_len_max(G):
 
 
 
-def single_central_galaxies(groups, G, Mass_cutoff = 0.06424,Group_of_one = 1):
+def single_central_galaxies(groups, G, Mass_cutoff = 0.0492406,Group_of_one = 1):
 
 	"""
 	Create indices of a single galaxies.
@@ -1339,7 +1339,7 @@ def group_indices_for_percentage(updated_dict, limiting_group_size):
 
     #for i in updated_dict.keys():
     limit = limiting_group_size
-    for i in trange(1,limit,1): #max group size is limiting_group_size-1
+    for i in trange(3,limit,1): #max group size is limiting_group_size-1
         for group_key in updated_dict[i]["Groups"].keys():
 
             #Adding check if central is present in a halo. There is at least one halo without
@@ -1391,10 +1391,14 @@ def compute_group_properties(c_ind, s_ind, g_ind):
     g_m = []
     g_st = []
     group_length = []
+    g_cold_gas = []
 
     for i in tqdm(g_ind):
         g_mass = np.sum(G['DiscHI'],axis=1)[i]*1e10/h
         g_st_mass = G['StellarMass'][i]*1e10/h
+        g_cg = G['ColdGas'][i]*1e10/h
+
+        g_cold_gas.append(np.sum(g_cg))
         g_m.append(np.sum(g_mass))
         g_st.append(np.sum(g_st_mass))
 
@@ -1404,12 +1408,17 @@ def compute_group_properties(c_ind, s_ind, g_ind):
 
     # Compute central galaxies
 
-    print(c_ind[0:10])
+    #print(c_ind[0:10])
 
     central_mass = np.sum(G['DiscHI'],axis=1)[c_ind]*1e10/h
     central_st_mass = G['StellarMass'][c_ind]*1e10/h
     print("Computed central mass")
     print("Computed satellite mass")
+
+    #compute h2 and vmax
+    cold_gas = G['ColdGas'][c_ind]*1e10/h
+    h2_disc = np.sum(G['DiscH2'], axis=1)[c_ind]*1e10/h
+    #vmax = G['Vmax'][c_ind]*1e10/h
 
     #Compute bulge to total ratio of the central galaxy
     BTT_cen = (G['InstabilityBulgeMass'][c_ind] + G['MergerBulgeMass'][c_ind]) / ( G['StellarMass'][c_ind] )
@@ -1429,12 +1438,19 @@ def compute_group_properties(c_ind, s_ind, g_ind):
     #ID
     central_id = G['GalaxyIndex'][c_ind]
 
-    # Compute percentage
-    percentage = (central_mass.ravel()/g_m)*100
-    print('Computed percentage of HI in central')
+    #SFR
+    sfr_tot = G['SfrFromH2'][c_ind] + G['SfrInstab'][c_ind] + G['SfrMergeBurst'][c_ind]
+    sfr_h2 = G['SfrFromH2'][c_ind]
+    sfr_ins = G['SfrInstab'][c_ind]
+    sfr_bur = G['SfrMergeBurst'][c_ind]
 
-    return g_m, g_st, percentage, BTT_cen, Mvir_cen, Rvir_cen, group_length, last_major_merger_cen,\
-            last_minor_merger_cen, length_cen, central_id, central_mass, central_st_mass
+    # Compute percentage
+    #percentage = []
+    percentage = (central_mass.ravel()/g_m)*100
+    #print('Computed percentage of HI in central')
+
+    return sfr_tot, sfr_h2, sfr_ins, sfr_bur, g_cold_gas, cold_gas, h2_disc, g_m, g_st, percentage, BTT_cen, Mvir_cen, \
+        Rvir_cen, group_length, last_major_merger_cen, last_minor_merger_cen, length_cen, central_id, central_mass, central_st_mass
 
 
 def plot_per_cent_of_HI_in_central(g_m, g_st, percentage):
@@ -1443,6 +1459,7 @@ def plot_per_cent_of_HI_in_central(g_m, g_st, percentage):
     Make a plot with group paramteres (stellar mass vs HI mass) and a colormap is % of the HI in central with respect to group HI mass.
 
     Parameters:
+    
     ===========
     g_m: List of floats. Group HI mass.
     g_st: List of floats. Group stellar mass.
@@ -1479,8 +1496,9 @@ def plot_per_cent_of_HI_in_central(g_m, g_st, percentage):
 
 
 
-def make_dataframe_for_pairplot(g_st, g_m, percentage, group_length, BTT_cen, Mvir_cen, Rvir_cen, last_major_merger_cen,
-            last_minor_merger_cen, length_cen, central_id, central_mass, central_st_mass):
+def make_dataframe_for_pairplot(sfr_tot, sfr_h2, sfr_ins, sfr_bur, g_cold_gas, cold_gas, h2_disc,\
+        g_st, g_m, percentage, group_length, BTT_cen, Mvir_cen, Rvir_cen, last_major_merger_cen,\
+                last_minor_merger_cen, length_cen, central_id, central_mass, central_st_mass):
     """
     Create a pandas dataframe.
 
@@ -1502,12 +1520,19 @@ def make_dataframe_for_pairplot(g_st, g_m, percentage, group_length, BTT_cen, Mv
     # Define what goes into dataframe
     df_pair = pd.DataFrame({'GroupStellarMass'   : np.log10(g_st),
                             'GroupHIMass'        : np.log10(g_m),
+                            'GroupColdGas'       : np.log10(g_cold_gas),
                             'Percent'            : percentage,
                             'GroupSize'          : group_length,
                             'CentralStellarMass' : central_st_mass.ravel(),
                             'CentralHIMass'      : central_mass.ravel(),
+                            'CentralH2Mass'      : h2_disc.ravel(),
+                            'CentralColdGas'     : cold_gas.ravel(),
+                            'SFRtot'             : sfr_tot.ravel(),
+                            'SFRH2'              : sfr_h2.ravel(),
+                            'SFRinstab'          : sfr_ins.ravel(),
+                            'SFRburst'           : sfr_bur.ravel(),
                             'CentralID'          : central_id.ravel(),
-                            'BTTcentral'         : BTT_cen.ravel() ,
+                            'BTTcentral'         : BTT_cen.ravel(),
                             'LenCentral'         : length_cen.ravel(),
                             'Mvircen'            : Mvir_cen.ravel(),
                             'Rvircen'            : Rvir_cen.ravel(),
@@ -1516,7 +1541,7 @@ def make_dataframe_for_pairplot(g_st, g_m, percentage, group_length, BTT_cen, Mv
                             })
 
 
-    df_pair.to_csv('../csv_files/Single_galaxies.csv')
+    df_pair.to_csv('../csv_files/re_calibrated/Groups_z0.csv')
     print('Saved csv file')
     return df_pair
 
@@ -1540,10 +1565,17 @@ def compute_satellite_properties(c_ind, s_ind, g_ind):
     g_m = []
     g_st = []
     grp_length = []
+    cold_gas = []
+    h2_disc = []
+    vmax = []
 
     for i in g_ind:
         s_mass = np.sum(G['DiscHI'], axis=1)[i]*1e10/h
         s_st_mass = G['StellarMass'][i]*1e10/h
+
+        gal_cold_gas = G['ColdGas'][i]*1e10/h
+        gal_h2_disc = np.sum(G['DiscH2'], axis=1)[i]*1e10/h
+        gal_vmax = G['Vmax'][i]*1e10/h
 
         g_mass = np.sum(G['DiscHI'],axis=1)[i]*1e10/h
         g_st_mass = G['StellarMass'][i]*1e10/h
@@ -1564,6 +1596,9 @@ def compute_satellite_properties(c_ind, s_ind, g_ind):
         size = len(i)
         grp_length.append(size)
 
+        cold_gas.append(gal_cold_gas)
+        vmax.append(gal_vmax)
+        h2_disc.append(gal_h2_disc)
         s_m.append(s_mass)
         s_st.append(s_st_mass)
         btt_s.append(BTT_s)
@@ -1581,12 +1616,12 @@ def compute_satellite_properties(c_ind, s_ind, g_ind):
 
     percentage = (central_mass.ravel()/g_m)*100
 
-    return s_m, s_st, btt_s, mvir_s, rvir_s, last_major_merger_s, last_minor_merger_s, index_s,\
+    return cold_gas, vmax, h2_disc, s_m, s_st, btt_s, mvir_s, rvir_s, last_major_merger_s, last_minor_merger_s, index_s,\
             index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id,\
             percentage
 
 
-def make_dataframe_satellites(s_m, s_st, btt_s, mvir_s, rvir_s, last_major_merger_s, last_minor_merger_s, index_s,
+def make_dataframe_satellites(cold_gas, vmax, h2_disc, s_m, s_st, btt_s, mvir_s, rvir_s, last_major_merger_s, last_minor_merger_s, index_s,
 index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id, percentage):
 
     """
@@ -1608,6 +1643,9 @@ index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id, 
                             'GroupSize'          : grp_length,
                             'StellarMass'        : s_st,
                             'HIMass'             : s_m,
+                            'H2Mass'             : h2_disc,
+                            'ColdGas'            : cold_gas,
+                            'Vmax'               : vmax,
                             'CentralID'          : index_c,
                             'ID'                 : index_s,
                             'BTT'                : btt_s,
@@ -1620,8 +1658,8 @@ index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id, 
                             })
 
 
-    #df_group.to_csv('../csv_files/Groups_with_satellites', sep='\t')
-    print('Saved csv file')
+    #df_group.to_csv('../csv_files/Groups_with_cold_gas', sep='\t')
+    #print('Saved csv file')
     
     #This doesn't work, need to build hf5 file.
     #df_group.to_hdf('../csv_files/Groups_with_satellites_h5.h5', key='df', mode='a')
@@ -2483,7 +2521,8 @@ if __name__ == "__main__":
 
     debug = False
 
-    Mass_cutoff = 0.06424
+    Mass_cutoff = 0.0492406
+
 
     number_of_files = 512
     h = 0.73
@@ -2497,13 +2536,15 @@ if __name__ == "__main__":
 
     N_sized_groups = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 
-    limiting_group_size = 2 #max group number will be limiting_group_size - 1
+    limiting_group_size = 101  #max group number will be limiting_group_size - 1
 
     # Parameters for BTT plots
-    BTT_number = 0.6 # Separation between bulgy/disky galaxy
+    BTT_number = 0.4 # Separation between bulgy/disky galaxy
     group_sizes_BTT = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] # Group member size
 
-    indir = '/fred/oz042/rdzudzar/simulation_catalogs/darksage/millennium_latest/output/' # directory where the Dark Sage data are
+    indir = '/fred/oz042/rdzudzar/simulation_catalogs/darksage/millennium_recalibrated/output/' # directory where the Dark Sage data are
+    #indir = '/fred/oz042/rdzudzar/simulation_catalogs/darksage/millennium_latest/output/' #DS before
+    #recalibration
 
     NpartMed = 100 # minimum number of particles for finding relevant medians for minima on plots
 
@@ -2562,12 +2603,12 @@ if __name__ == "__main__":
 
     # Compute group masses (HI and stellar)
 
-    g_m, g_st, percentage, BTT_cen, Mvir_cen, Rvir_cen, group_length, last_major_merger_cen,\
+    sfr_tot, sfr_h2, sfr_ins, sfr_bur, g_cold_gas, cold_gas, h2_disc, g_m, g_st, percentage, BTT_cen, Mvir_cen, Rvir_cen, group_length, last_major_merger_cen,\
             last_minor_merger_cen, length_cen, central_id, central_mass, central_st_mass = compute_group_properties(c_ind, s_ind, g_ind)
 
     #plot_per_cent_of_HI_in_central(g_m, g_st, percentage)
 
-    df_pairplot = make_dataframe_for_pairplot(g_st, g_m, percentage, group_length, BTT_cen,\
+    df_pairplot = make_dataframe_for_pairplot(sfr_tot, sfr_h2, sfr_ins, sfr_bur, g_cold_gas, cold_gas, h2_disc,  g_st, g_m, percentage, group_length, BTT_cen,\
             Mvir_cen, Rvir_cen,last_major_merger_cen, last_minor_merger_cen, length_cen, central_id, central_mass, central_st_mass)
 
     #Compute group properties with central and satellite galaxies
