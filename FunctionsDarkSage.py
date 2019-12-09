@@ -328,7 +328,7 @@ def create_groups_dictionary(store_all_indices):
 
 
 @jit
-def create_cen_sat_from_groups_dict(groups, store_cen_indices, my_mass_cutoff=0.0492406):
+def create_cen_sat_from_groups_dict(groups, store_cen_indices, my_mass_cutoff=0.04606):#0.0492406
     """
     Created dictionary which is used to extract indices of central and satellite galaxies, taking into account
     the mass cutoff provided. Also creates "Groups" which store information on a group basis and their sat/cen galaxies.
@@ -456,7 +456,7 @@ def plot_len_max(G):
 
 
 
-def single_central_galaxies(groups, G, Mass_cutoff = 0.0492406,Group_of_one = 1):
+def single_central_galaxies(groups, G, Mass_cutoff = 0.04606, Group_of_one = 1):#0.0492406
 
 	"""
 	Create indices of a single galaxies.
@@ -1413,7 +1413,6 @@ def compute_group_properties(c_ind, s_ind, g_ind):
     central_mass = np.sum(G['DiscHI'],axis=1)[c_ind]*1e10/h
     central_st_mass = G['StellarMass'][c_ind]*1e10/h
     print("Computed central mass")
-    print("Computed satellite mass")
 
     #compute h2 and vmax
     cold_gas = G['ColdGas'][c_ind]*1e10/h
@@ -1541,7 +1540,7 @@ def make_dataframe_for_pairplot(sfr_tot, sfr_h2, sfr_ins, sfr_bur, g_cold_gas, c
                             })
 
 
-    df_pair.to_csv('../csv_files/re_calibrated/Groups_z0.csv')
+    df_pair.to_csv('../csv_files/re_calibrated/Groups_z0_168_dec.csv')
     print('Saved csv file')
     return df_pair
 
@@ -1568,6 +1567,9 @@ def compute_satellite_properties(c_ind, s_ind, g_ind):
     cold_gas = []
     h2_disc = []
     vmax = []
+    sfr_in = []
+    sfr_h2 = []
+    sfr_bu = []
 
     for i in g_ind:
         s_mass = np.sum(G['DiscHI'], axis=1)[i]*1e10/h
@@ -1593,9 +1595,16 @@ def compute_satellite_properties(c_ind, s_ind, g_ind):
 
         SFR = G['SfrFromH2'][i] + G['SfrInstab'][i] + G['SfrMergeBurst'][i]
 
+        SFR_in = G['SfrInstab'][i]
+        SFR_h2 = G['SfrFromH2'][i]
+        SFR_bu = G['SfrMergeBurst'][i]
+
         size = len(i)
         grp_length.append(size)
 
+        sfr_in.append(SFR_in)
+        sfr_h2.append(SFR_h2)
+        sfr_bu.append(SFR_bu)
         cold_gas.append(gal_cold_gas)
         vmax.append(gal_vmax)
         h2_disc.append(gal_h2_disc)
@@ -1618,7 +1627,7 @@ def compute_satellite_properties(c_ind, s_ind, g_ind):
 
     return cold_gas, vmax, h2_disc, s_m, s_st, btt_s, mvir_s, rvir_s, last_major_merger_s, last_minor_merger_s, index_s,\
             index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id,\
-            percentage
+            percentage, sfr_in, sfr_bu, sfr_h2
 
 
 def make_dataframe_satellites(cold_gas, vmax, h2_disc, s_m, s_st, btt_s, mvir_s, rvir_s, last_major_merger_s, last_minor_merger_s, index_s,
@@ -1669,7 +1678,8 @@ index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id, 
 
 
 def create_h5py_dataframe(s_m, s_st, btt_s, mvir_s, rvir_s, last_major_merger_s, last_minor_merger_s, index_s,
-        index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id, percentage):
+        index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id, percentage,
+        sfr_in, sfr_bu, sfr_h2):
 
     """
     Create h5 file, containing the simulated data for groups, centrals and satellite galaxies.
@@ -1683,7 +1693,7 @@ def create_h5py_dataframe(s_m, s_st, btt_s, mvir_s, rvir_s, last_major_merger_s,
 
     """
 
-    with h5py.File("Groups_with_satellites.h5", "w") as f:
+    with h5py.File("Groups_with_satellites_re.h5", "w") as f:
 
         for group_num, _ in enumerate(g_st):
             this_group = f.create_group(f"group_{group_num}")
@@ -1699,6 +1709,9 @@ def create_h5py_dataframe(s_m, s_st, btt_s, mvir_s, rvir_s, last_major_merger_s,
             this_group["Percent"] = percentage[group_num]
             this_group["BTT"] = btt_s[group_num]
             this_group["SFR"] = sfr[group_num]
+            this_group["SFR_instab"] = sfr_in[group_num]
+            this_group["SFR_merger"] = sfr_bu[group_num]
+            this_group["SFR_h2"] = sfr_h2[group_num]
             this_group["Mvir"] = mvir_s[group_num]
             this_group["Rvir"] = rvir_s[group_num]
             this_group["LastMajorMerger"] = last_major_merger_s[group_num]
@@ -2508,7 +2521,7 @@ def BTT_for_groups(df_percent, BTT_number, group_sizes_BTT):
 if __name__ == "__main__":
 
     #Outpu directory for saving plots/data
-    outdir = '/fred/oz042/rdzudzar/python/explore_simulations/plots/'
+    outdir = '/fred/oz042/rdzudzar/python/explore_simulations/dec_rec/'
     outdir_binned = '/fred/oz042/rdzudzar/python/explore_simulations/plots/binned/'
     #outdir = '/home/rdzudzar/scratch/python/plots_mpi/'
     #outdir = '/home/rdzudzar/scratch/python/plots_200/'
@@ -2521,7 +2534,7 @@ if __name__ == "__main__":
 
     debug = False
 
-    Mass_cutoff = 0.0492406
+    Mass_cutoff = 0.04606#0.0492406
 
 
     number_of_files = 512
@@ -2536,13 +2549,14 @@ if __name__ == "__main__":
 
     N_sized_groups = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 
-    limiting_group_size = 101  #max group number will be limiting_group_size - 1
+    limiting_group_size = 168  #max group number will be limiting_group_size - 1
 
     # Parameters for BTT plots
     BTT_number = 0.4 # Separation between bulgy/disky galaxy
     group_sizes_BTT = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] # Group member size
 
-    indir = '/fred/oz042/rdzudzar/simulation_catalogs/darksage/millennium_recalibrated/output/' # directory where the Dark Sage data are
+    #indir = '/fred/oz042/rdzudzar/simulation_catalogs/darksage/millennium_recalibrated/output/' # directory where the Dark Sage data are
+    indir = '/fred/oz042/rdzudzar/simulation_catalogs/darksage/millennium_rec_dec/output/'#december recalibration
     #indir = '/fred/oz042/rdzudzar/simulation_catalogs/darksage/millennium_latest/output/' #DS before
     #recalibration
 
@@ -2613,14 +2627,16 @@ if __name__ == "__main__":
 
     #Compute group properties with central and satellite galaxies
 
-    #s_m, s_st, btt_s, mvir_s, rvir_s, last_major_merger_s, last_minor_merger_s, index_s,\
-    #index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id, percentage = compute_satellite_properties(c_ind, s_ind, g_ind)
+    #cold_gas, vmax, h2_disc, s_m, s_st, btt_s, mvir_s, rvir_s, last_major_merger_s, last_minor_merger_s, index_s,\
+    #index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id, percentage,\
+    #sfr_in, sfr_bu, sfr_h2 = compute_satellite_properties(c_ind, s_ind, g_ind)
 
     #df_group = make_dataframe_satellites(s_m, s_st, btt_s, mvir_s, rvir_s, last_major_merger_s, last_minor_merger_s, index_s,
 #index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id)
 
     #create_h5py_dataframe(s_m, s_st, btt_s, mvir_s, rvir_s, last_major_merger_s, last_minor_merger_s, index_s,
-    #index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id, percentage)
+    #index_c, sfr, g_m, g_st, grp_length, central_mass, central_st_mass, central_id, percentage,
+    #sfr_in, sfr_bu, sfr_h2)
 
 
 
